@@ -17,7 +17,7 @@ export function Login() {
   React.useEffect(() => {
     // Force set on mount to bypass React Fast Refresh keeping old state
     setEmail('demo@gmail.com');
-    setPassword('Pravah@2026!');
+    setPassword('demo123');
   }, []);
 
   const handleLogin = async (e) => {
@@ -56,22 +56,22 @@ export function Login() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Email Address</label>
-            <input 
-              type="email" 
+            <input
+              type="email"
               required
-              className={inputCls} 
-              style={inputStyle} 
+              className={inputCls}
+              style={inputStyle}
               value={email}
               onChange={e => setEmail(e.target.value)}
             />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Password</label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               required
-              className={inputCls} 
-              style={inputStyle} 
+              className={inputCls}
+              style={inputStyle}
               value={password}
               onChange={e => setPassword(e.target.value)}
             />
@@ -80,7 +80,7 @@ export function Login() {
             {loading ? "Logging in..." : "Login to PRAVAH"}
           </Btn>
         </form>
-        
+
         <div className="mt-6 text-center text-sm" style={{ color: C.slate }}>
           Don't have an account? <Link to="/register" className="font-semibold underline" style={{ color: C.saffron }}>Register here</Link>
         </div>

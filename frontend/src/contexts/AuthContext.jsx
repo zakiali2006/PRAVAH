@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import api from '../api/axios';
 
 const AuthContext = createContext();
 
@@ -7,39 +8,44 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      // Force logout on every fresh open of the app as per user request
-      localStorage.removeItem('token');
-      setCurrentUser(null);
+    const fetchUser = async () => {
+      if (localStorage.getItem('token')) {
+        try {
+          const response = await api.get('/auth/me');
+          setCurrentUser(response.data.data);
+        } catch (err) {
+          console.error("Auth me error:", err);
+          setCurrentUser(null);
+        }
+      }
       setLoading(false);
     };
-    checkAuth();
+    fetchUser();
   }, []);
 
   const login = async (email, password) => {
-    // Simulate network delay for real feel
-    await new Promise(r => setTimeout(r, 1200));
-    
-    // Hardcoded mock credentials
-    if (password !== "Pravah@2026!") {
-      throw new Error("Invalid credentials");
+    try {
+      const response = await api.post('/auth/login', { 
+        email, 
+        password 
+      });
+      const token = response.data.data.access_token;
+      localStorage.setItem('token', token);
+      
+      // Fetch profile immediately after login
+      const profileRes = await api.get('/auth/me');
+      setCurrentUser(profileRes.data.data);
+      return profileRes.data.data;
+    } catch (err) {
+      console.error("Auth login error:", err);
+      throw err;
     }
-
-    localStorage.setItem('token', 'mock_jwt_token_for_demo');
-    
-    const mockUser = {
-      id: 1,
-      email: email,
-      full_name: "Demo Investor",
-      role: "investor"
-    };
-    setCurrentUser(mockUser);
-    return mockUser;
   };
 
   const logout = () => {
     localStorage.removeItem('token');
     setCurrentUser(null);
+    window.location.href = '/login';
   };
 
   const value = {

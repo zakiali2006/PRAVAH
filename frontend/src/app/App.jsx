@@ -47,12 +47,8 @@ import { PublicConsultations } from "../features/home/pages/PublicConsultations"
 import { AuditLogs } from "../features/dashboard/pages/AuditLogs";
 import { FraudRadar } from "../features/officer/pages/FraudRadar";
 import { Feedback } from "../features/dashboard/pages/Feedback";
-// A wrapper to enforce authentication inline
-function PrivateRoute() {
-  const { currentUser, loading } = useAuth();
-  if (loading) return null;
-  return currentUser ? <Outlet /> : <Login />;
-}
+import { Unauthorized } from "../pages/Unauthorized";
+import { ProtectedRoute } from "../components/common/ProtectedRoute";
 
 // A layout for public pages
 import { useLocation } from "react-router-dom";
@@ -101,8 +97,10 @@ function AppRoutes() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
             
-            <Route element={<PrivateRoute />}>
+            {/* Investor Only Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['investor', 'admin']} />}>
               <Route path="/dashboard" element={<InvestorDashboard />} />
               <Route path="/business" element={<MyBusiness />} />
               <Route path="/drive" element={<DocumentDrive />} />
@@ -122,9 +120,11 @@ function AppRoutes() {
           </Route>
 
           {/* Officer Routes */}
-          <Route path="/officer" element={<PrivateRoute><OfficerLayout /></PrivateRoute>}>
-            <Route index element={<OfficerDashboard />} />
-            <Route path="fraud" element={<FraudRadar alerts={INITIAL_FRAUD_ALERTS} />} />
+          <Route element={<ProtectedRoute allowedRoles={['officer', 'admin']} />}>
+            <Route path="/officer" element={<OfficerLayout />}>
+              <Route index element={<OfficerDashboard />} />
+              <Route path="fraud" element={<FraudRadar alerts={INITIAL_FRAUD_ALERTS} />} />
+            </Route>
           </Route>
         </Routes>
         <ChatBot />

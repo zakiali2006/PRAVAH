@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Upload, X, File, Loader2, Bot, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { uploadDocumentAPI, validateDocumentAPI } from '../../../api/client';
 
 export function UploadDocumentModal({ onClose, onUpload }) {
   // states: 'idle', 'analyzing', 'result', 'saving'
@@ -7,6 +8,10 @@ export function UploadDocumentModal({ onClose, onUpload }) {
   const [docName, setDocName] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
+
+  const [validationData, setValidationData] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
+  const [documentId, setDocumentId] = useState(null);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -16,10 +21,11 @@ export function UploadDocumentModal({ onClose, onUpload }) {
       if (!docName) {
         setDocName(file.name.split('.')[0]);
       }
+      setUploadError(null);
     }
   };
 
-  const handleInitialSubmit = (e) => {
+  const handleInitialSubmit = async (e) => {
     e.preventDefault();
     if (!selectedFile) {
         alert("Please select a file first.");
@@ -29,20 +35,44 @@ export function UploadDocumentModal({ onClose, onUpload }) {
     
     // Switch to analyzing step
     setStep('analyzing');
+    setUploadError(null);
 
-    // Wait 3 seconds to simulate AI OCR scanning and DB verification
-    setTimeout(() => {
+    try {
+      // 1. Upload Document
+      // Assume documentTypeId = 1 (Certificate) for now
+      const uploadRes = await uploadDocumentAPI(selectedFile, 1, JSON.stringify({ title: docName }));
+      
+      const newDocId = uploadRes.data.id;
+      setDocumentId(newDocId);
+
+      // 2. Validate Document via AI Pipeline
+      const validationRes = await validateDocumentAPI(newDocId);
+      
+      setValidationData(validationRes.data);
       setStep('result');
-    }, 3500);
+
+    } catch (err) {
+      console.error(err);
+      setUploadError(err.message || 'An error occurred during upload/validation.');
+      setStep('idle');
+    }
   };
 
   const handleFinalSave = async () => {
     setStep('saving');
+    // For the UI, we use the returned status if available, else 'verified' if VALID
+    let finalStatus = 'pending';
+    if (validationData) {
+        if (validationData.status === 'VALID') finalStatus = 'verified';
+        else if (validationData.status === 'WARNING' || validationData.status === 'INVALID') finalStatus = 'ai_flagged';
+    }
+
     await onUpload({
+      id: documentId ? `DOC-${documentId}` : undefined,
       name: docName,
       type: selectedFile?.type || 'application/pdf',
       size: selectedFile ? `${(selectedFile.size / 1024 / 1024).toFixed(1)} MB` : '1.2 MB',
-      status: 'ai_flagged' // Changed from 'pending' because the AI just reviewed and flagged it
+      status: finalStatus
     });
     onClose();
   };
@@ -91,6 +121,13 @@ export function UploadDocumentModal({ onClose, onUpload }) {
             )}
           </div>
 
+          {/* Error Message */}
+          {uploadError && (
+             <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-sm font-medium">
+                {uploadError}
+             </div>
+          )}
+
           {/* STEP 1: Upload Form Details (Idle) */}
           {step === 'idle' && (
             <form onSubmit={handleInitialSubmit} className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -136,40 +173,58 @@ export function UploadDocumentModal({ onClose, onUpload }) {
                 </div>
                 <div className="text-left">
                   <h4 className="text-sm font-black text-slate-800">PRAVAH AI Scanner</h4>
-                  <p className="text-[11px] text-slate-500">Extracting content and running verifications...</p>
+                  <p className="text-[11px] text-slate-500">Extracting content and running verifications via Server...</p>
                 </div>
               </div>
 
               {/* Simulated progress texts */}
               <div className="bg-slate-50 p-3 rounded-lg text-xs font-mono text-slate-600 text-left w-full h-[88px] overflow-hidden border border-slate-200">
-                <p className="text-emerald-600">✓ File structure verified (Confidence: 98%)</p>
-                <p className="text-emerald-600 mt-1 animate-in fade-in" style={{animationDelay: '0.5s', animationFillMode: 'both'}}>✓ Signature block detected</p>
+                <p className="text-blue-600 animate-pulse">⟳ Uploading document...</p>
                 <p className="text-blue-600 mt-1 animate-pulse" style={{animationDelay: '1s', animationFillMode: 'both'}}>⟳ Extracting text via OCR...</p>
-                <p className="text-blue-600 mt-1 animate-pulse" style={{animationDelay: '2s', animationFillMode: 'both'}}>⟳ Cross-referencing database profile...</p>
+                <p className="text-blue-600 mt-1 animate-pulse" style={{animationDelay: '2s', animationFillMode: 'both'}}>⟳ Cross-referencing DB profile...</p>
               </div>
             </div>
           )}
 
-          {/* STEP 3: Result (Mock AI Output) */}
-          {(step === 'result' || step === 'saving') && (
+          {/* STEP 3: Result (Real AI Output) */}
+          {(step === 'result' || step === 'saving') && validationData && (
             <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500 border-t border-slate-100 pt-4">
-              <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 flex gap-3 items-start shadow-sm">
-                <AlertTriangle className="text-orange-500 shrink-0 mt-0.5" size={18} />
+              
+              {/* Dynamic Status Banner */}
+              <div className={`border rounded-xl p-3 flex gap-3 items-start shadow-sm ${validationData.status === 'VALID' ? 'bg-emerald-50 border-emerald-200' : validationData.status === 'WARNING' ? 'bg-orange-50 border-orange-200' : 'bg-red-50 border-red-200'}`}>
+                {validationData.status === 'VALID' ? (
+                   <CheckCircle2 className="text-emerald-500 shrink-0 mt-0.5" size={18} />
+                ) : (
+                   <AlertTriangle className={`shrink-0 mt-0.5 ${validationData.status === 'WARNING' ? 'text-orange-500' : 'text-red-500'}`} size={18} />
+                )}
+                
                 <div>
-                  <h4 className="text-[13px] font-bold text-orange-800 mb-1">AI Pre-Validation Warning</h4>
-                  <p className="text-[11px] text-orange-700 leading-relaxed mb-2">
-                    The name extracted from the document does not exactly match your registered Business Profile name. In PRAVAH 2.0, this would cause a 7-day manual review delay.
-                  </p>
-                  <div className="bg-white rounded border border-orange-100 p-2 text-[10px] grid grid-cols-2 gap-2">
-                    <div>
-                      <span className="block text-slate-400 font-semibold">Extracted (OCR)</span>
-                      <span className="font-bold text-slate-800 text-xs">Rahul Enterprises</span>
-                    </div>
-                    <div>
-                      <span className="block text-slate-400 font-semibold">Expected (Profile)</span>
-                      <span className="font-bold text-slate-800 text-xs">Rahul Ltd</span>
-                    </div>
-                  </div>
+                  <h4 className={`text-[13px] font-bold mb-1 ${validationData.status === 'VALID' ? 'text-emerald-800' : validationData.status === 'WARNING' ? 'text-orange-800' : 'text-red-800'}`}>
+                    AI Validation: {validationData.status}
+                  </h4>
+                  
+                  {/* Render Reasons */}
+                  {validationData.reasons && validationData.reasons.length > 0 ? (
+                    <ul className={`text-[11px] leading-relaxed mb-2 list-disc pl-4 ${validationData.status === 'VALID' ? 'text-emerald-700' : validationData.status === 'WARNING' ? 'text-orange-700' : 'text-red-700'}`}>
+                      {validationData.reasons.map((r, i) => <li key={i}>{r}</li>)}
+                    </ul>
+                  ) : (
+                     <p className={`text-[11px] leading-relaxed mb-2 ${validationData.status === 'VALID' ? 'text-emerald-700' : 'text-orange-700'}`}>
+                       Document processed successfully.
+                     </p>
+                  )}
+
+                  {/* Optional: Render extracted data subset if it exists */}
+                  {validationData.extracted_data && Object.keys(validationData.extracted_data).length > 0 && (
+                     <div className={`bg-white rounded border p-2 text-[10px] grid grid-cols-2 gap-2 mt-2 ${validationData.status === 'VALID' ? 'border-emerald-100' : 'border-orange-100'}`}>
+                       {Object.entries(validationData.extracted_data).slice(0, 4).map(([key, value]) => (
+                         <div key={key}>
+                            <span className="block text-slate-400 font-semibold truncate capitalize">{key.replace(/_/g, ' ')}</span>
+                            <span className="font-bold text-slate-800 text-xs truncate">{typeof value === 'object' ? '...' : String(value)}</span>
+                         </div>
+                       ))}
+                     </div>
+                  )}
                 </div>
               </div>
 

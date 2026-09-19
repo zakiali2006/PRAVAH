@@ -22,9 +22,13 @@ apiClient.interceptors.request.use(
 
 export default apiClient;
 
-export const validateDocument = async (file) => {
+export const uploadDocumentAPI = async (file, documentTypeId = 1, metadata = null) => {
   const formData = new FormData();
   formData.append('file', file);
+  formData.append('document_type_id', documentTypeId);
+  if (metadata) {
+    formData.append('metadata', metadata);
+  }
   
   const token = localStorage.getItem('token');
   const headers = {};
@@ -32,7 +36,7 @@ export const validateDocument = async (file) => {
     headers['Authorization'] = `Bearer ${token}`;
   }
   
-  const response = await fetch('http://localhost:8000/api/documents/validate', {
+  const response = await fetch('http://localhost:8000/api/documents/upload', {
     method: 'POST',
     headers,
     body: formData,
@@ -40,7 +44,28 @@ export const validateDocument = async (file) => {
   
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.detail || 'Document validation failed');
+    throw new Error(errorData.message || 'Document upload failed');
+  }
+  return response.json();
+};
+
+export const validateDocumentAPI = async (documentId) => {
+  const token = localStorage.getItem('token');
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const response = await fetch(`http://localhost:8000/api/documents/${documentId}/validate`, {
+    method: 'POST',
+    headers,
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Document validation failed');
   }
   return response.json();
 };

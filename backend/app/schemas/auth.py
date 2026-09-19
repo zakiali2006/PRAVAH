@@ -1,21 +1,53 @@
-from pydantic import BaseModel, EmailStr
+from typing import Optional
+from pydantic import BaseModel, EmailStr, ConfigDict
+
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    phone: Optional[str] = None
+    role: Optional[str] = "investor"
+
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+
 class Token(BaseModel):
     access_token: str
-    token_type: str
-    
-class TokenData(BaseModel):
-    email: str | None = None
+    refresh_token: str
+    token_type: str = "bearer"
 
-class User(BaseModel):
+
+class TokenData(BaseModel):
+    user_id: Optional[int] = None
+
+
+class UserResponse(BaseModel):
     id: int
     email: EmailStr
+    phone: Optional[str] = None
     role: str
     is_active: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+
+class OTPRequest(BaseModel):
+    email: EmailStr
+
+
+class OTPVerify(BaseModel):
+    email: EmailStr
+    otp: str
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str
