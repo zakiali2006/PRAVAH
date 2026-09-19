@@ -3,6 +3,7 @@ from typing import List
 from google import genai
 from app.core.config import settings
 
+
 def generate_embeddings(texts: List[str]) -> List[List[float]]:
     """
     Kajal's Module: AI Embeddings
@@ -12,7 +13,7 @@ def generate_embeddings(texts: List[str]) -> List[List[float]]:
         return []
 
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
-    
+
     try:
         response = client.models.embed_content(
             model="models/embedding-001",
@@ -26,4 +27,5 @@ def generate_embeddings(texts: List[str]) -> List[List[float]]:
         print(f"Gemini Embedding failed: {e}. Falling back to dummy vectors.")
         # Fallback to dummy 768-d vectors for the hackathon demo if API fails
         import random
+
         return [[random.random() for _ in range(768)] for _ in texts]

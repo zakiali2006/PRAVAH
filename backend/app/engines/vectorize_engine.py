@@ -3,6 +3,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from app.ai.vector_store import store_document_chunks
 
+
 def chunk_document_text(text: str, chunk_size: int = 500) -> List[str]:
     """
     Slices raw document text into manageable chunks.
@@ -10,9 +11,9 @@ def chunk_document_text(text: str, chunk_size: int = 500) -> List[str]:
     """
     if not text:
         return []
-    
+
     # We replace newlines to prevent weird chunking, then wrap cleanly
-    clean_text = text.replace('\n', ' ').strip()
+    clean_text = text.replace("\n", " ").strip()
     return textwrap.wrap(clean_text, width=chunk_size, break_long_words=False)
 
 

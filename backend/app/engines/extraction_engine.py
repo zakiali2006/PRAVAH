@@ -45,7 +45,9 @@ def extract_structured_data(
 
     except Exception as e:
         error_msg = str(e)
-        print(f"Warning: AI Extraction failed ({error_msg}). Using fallback dummy data for demo continuity.")
+        print(
+            f"Warning: AI Extraction failed ({error_msg}). Using fallback dummy data for demo continuity."
+        )
         return DocumentExtractionResult(
             document_type=document_type,
             business_name="Acme Corp",
@@ -53,5 +55,5 @@ def extract_structured_data(
             issue_date="2024-01-01",
             address="123 Fake Street, Industrial Estate, Mumbai",
             signatures_present=True,
-            raw_extracted_text=raw_text[:200]
+            raw_extracted_text=raw_text[:200],
         )

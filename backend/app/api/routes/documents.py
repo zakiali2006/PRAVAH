@@ -1,4 +1,12 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form, BackgroundTasks
+from fastapi import (
+    APIRouter,
+    UploadFile,
+    File,
+    HTTPException,
+    Depends,
+    Form,
+    BackgroundTasks,
+)
 from sqlalchemy.orm import Session
 
 
@@ -202,6 +210,7 @@ def validate_document(
 
         # Phase 4: OCR
         from app.services.storage_service import storage_service
+
         absolute_file_path = storage_service.get_file_path(doc.file_path)
         raw_text = extract_raw_text(absolute_file_path, doc.mime_type)
 

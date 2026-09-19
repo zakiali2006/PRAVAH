@@ -73,5 +73,7 @@ def extract_raw_text(file_path: str, mime_type: str) -> str:
         return response.text.strip()
     except Exception as e:
         error_msg = str(e)
-        print(f"Warning: OCR failed ({error_msg}). Using fallback dummy text for demo continuity.")
+        print(
+            f"Warning: OCR failed ({error_msg}). Using fallback dummy text for demo continuity."
+        )
         return "DUMMY OCR TEXT: Acme Corp. Certificate of Incorporation. U12345MH2024PTC123456. 123 Fake Street, Industrial Estate, Mumbai."

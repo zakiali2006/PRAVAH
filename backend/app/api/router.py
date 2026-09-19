@@ -55,9 +55,8 @@ api_router.include_router(audit.router, prefix="/audit", tags=["Audit System"])
 # api_router.include_router(chat.router, prefix="/chat", tags=["Chat"])
 
 from app.api.routes import documents
-api_router.include_router(
-    documents.router, prefix="/documents", tags=["Documents"]
-)
+
+api_router.include_router(documents.router, prefix="/documents", tags=["Documents"])
 
 # from app.api.routes import officer
 # api_router.include_router(
