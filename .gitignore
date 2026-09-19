@@ -34,3 +34,5 @@ Thumbs.db
 .env.*
 !.env.example
 firebase-credentials.json
+
+phases.md

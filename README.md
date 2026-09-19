@@ -58,52 +58,57 @@ We are tracking progress against the `phases (1).md` master document.
 
 ---
 
-## 🛠️ How to Run Locally (After Pulling)
+## 🛠️ How to Run Locally
 
-Whenever you pull the latest code (`git pull origin main`), please ensure you re-install dependencies in case any new packages were added.
+We use Docker to manage local infrastructure (PostgreSQL with pgvector) alongside the FastAPI backend.
 
 ### Prerequisites
-1. **Node.js**: Download and install from [nodejs.org](https://nodejs.org/) (needed for the frontend).
-2. **Python**: Download and install Python 3.10+ from [python.org/downloads/](https://www.python.org/downloads/). During installation, **make sure to check the box that says "Add python.exe to PATH"**.
+1. **Docker Desktop**: Installed and running ([docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop)).
+2. **Node.js**: LTS version (needed for frontend).
+3. **Python**: 3.12+ (for local backend development).
 
-### Step 1: Start the Backend (FastAPI)
-The backend requires Python and runs the API that the frontend connects to.
-1. Open a terminal and navigate to the backend folder:
+### Quick Start
+
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd PRAVAH
+   ```
+
+2. **Configure Environment**:
    ```bash
    cd backend
+   cp .env.example .env
    ```
-2. (Optional but recommended) Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   # On Windows:
-   venv\Scripts\activate
-   # On Mac/Linux:
-   source venv/bin/activate
-   ```
-3. Install the required Python packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Start the server using Uvicorn:
-   ```bash
-   python -m uvicorn app.main:app --reload
-   ```
-   *The backend should now be running at `http://127.0.0.1:8000`.*
+   *(Fill in any missing keys in `.env` if necessary, though defaults work for local dev.)*
 
-### Step 2: Start the Frontend (React)
-The frontend requires Node.js and npm.
-1. Open a **second, separate terminal** and navigate to the frontend folder:
+3. **Start the Infrastructure (PostgreSQL + Backend)**:
+   From the repository root (where `docker-compose.yml` is):
+   ```bash
+   docker compose up -d postgres
+   ```
+   Wait for postgres to become healthy, then you can optionally run the backend in docker:
+   ```bash
+   docker compose up -d backend
+   ```
+   Alternatively, to run the backend locally (recommended for development):
+   ```bash
+   cd backend
+   python -m venv venv
+   venv\Scripts\activate  # On Windows
+   # source venv/bin/activate  # On Mac/Linux
+   pip install -r requirements.txt
+   alembic upgrade head  # (Coming in Phase 3)
+   python -m app.seed.seed  # (Coming in Phase 7)
+   uvicorn app.main:app --reload --port 8000
+   ```
+   *The backend API will be available at `http://localhost:8000/api/health` and Swagger at `http://localhost:8000/docs`.*
+
+4. **Start the Frontend**:
+   Open a new terminal at the project root:
    ```bash
    cd frontend
-   ```
-2. Install the necessary packages:
-   ```bash
    npm install
-   ```
-3. Start the Vite development server:
-   ```bash
    npm run dev
    ```
-   *The frontend should now be running at `http://localhost:5173`. Open this URL in your browser to view the application!*
-
-> **Note on Environment Variables**: We are currently in the development phase, so the `.env` file has intentionally been pushed to the repository so you can clone and run it immediately. `firebase-credentials.json` is ignored for security purposes. Before deploying to production, all secrets must be removed from the repository.
+   *The frontend will run at `http://localhost:5173`.*
