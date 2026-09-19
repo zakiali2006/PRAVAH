@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 
 from app.core.config import settings
-from app.models.base import Base
+from app.core.database import Base
 from app.models.user import User
 from app.repositories.user_repository import user_repo
 
