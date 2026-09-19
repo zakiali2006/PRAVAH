@@ -206,3 +206,19 @@ def reset_password(req: PasswordResetConfirm, db: Session = Depends(get_db)):
 def get_me(current_user=Depends(get_current_active_user)):
     user_data = UserResponse.model_validate(current_user).model_dump()
     return success_response(data=user_data, message="Current user retrieved")
+
+
+# -----------------------------------------------------------------------------
+# RBAC Example (For team reference)
+# -----------------------------------------------------------------------------
+from app.api.deps import RoleChecker
+
+
+@router.get("/admin-only")
+def admin_only_example(
+    current_user=Depends(RoleChecker(["SYSTEM_ADMIN", "POLICY_ADMIN"]))
+):
+    """
+    Example endpoint demonstrating how to restrict access to specific roles.
+    """
+    return success_response(message=f"Welcome Admin {current_user.email}!")

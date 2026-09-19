@@ -38,3 +38,43 @@ def get_current_active_user(
     if not current_user.is_active:
         raise UnauthorizedException(detail="Inactive user")
     return current_user
+
+
+class RoleChecker:
+    def __init__(self, allowed_roles: list[str]):
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, user: User = Depends(get_current_active_user)) -> User:
+        from app.repositories.rbac_repository import rbac_repo
+
+        if not rbac_repo.has_role(user, self.allowed_roles):
+            from app.core.exceptions import AppException
+
+            raise AppException(
+                status_code=403,
+                error_code="FORBIDDEN",
+                message="You do not have the required role to perform this action.",
+            )
+        return user
+
+
+class PermissionChecker:
+    def __init__(self, required_permissions: list[str]):
+        self.required_permissions = required_permissions
+
+    def __call__(
+        self,
+        user: User = Depends(get_current_active_user),
+        db: Session = Depends(get_db),
+    ) -> User:
+        from app.repositories.rbac_repository import rbac_repo
+
+        if not rbac_repo.has_permissions(db, user, self.required_permissions):
+            from app.core.exceptions import AppException
+
+            raise AppException(
+                status_code=403,
+                error_code="FORBIDDEN",
+                message="You do not have the required permissions to perform this action.",
+            )
+        return user
