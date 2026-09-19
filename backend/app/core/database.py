@@ -31,11 +31,9 @@ else:
 # Session Factory
 # ---------------------------------------------------------------------------
 SessionLocal = sessionmaker(
-    autocommit=False, 
-    autoflush=False, 
-    bind=engine, 
-    class_=Session
+    autocommit=False, autoflush=False, bind=engine, class_=Session
 )
+
 
 def get_db() -> Generator[Session, None, None]:
     """

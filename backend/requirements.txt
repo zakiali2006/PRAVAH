@@ -17,8 +17,8 @@ psycopg2-binary>=2.9.9
 
 # --- Security ---
 passlib[bcrypt]
-bcrypt
-pyjwt
+bcrypt==4.0.1
+python-jose[cryptography]
 
 # --- Validation ---
 email-validator

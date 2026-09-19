@@ -8,9 +8,17 @@ from app.models.base import BaseMixin
 role_permissions = Table(
     "role_permissions",
     Base.metadata,
-    Column("role_id", Integer, ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
-    Column("permission_id", Integer, ForeignKey("permissions.id", ondelete="CASCADE"), primary_key=True)
+    Column(
+        "role_id", Integer, ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True
+    ),
+    Column(
+        "permission_id",
+        Integer,
+        ForeignKey("permissions.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
+
 
 class Role(Base, BaseMixin):
     __tablename__ = "roles"
@@ -19,7 +27,9 @@ class Role(Base, BaseMixin):
     description = Column(String, nullable=True)
 
     # Relationships
-    permissions = relationship("Permission", secondary=role_permissions, back_populates="roles")
+    permissions = relationship(
+        "Permission", secondary=role_permissions, back_populates="roles"
+    )
 
 
 class Permission(Base, BaseMixin):
@@ -29,7 +39,9 @@ class Permission(Base, BaseMixin):
     description = Column(String, nullable=True)
 
     # Relationships
-    roles = relationship("Role", secondary=role_permissions, back_populates="permissions")
+    roles = relationship(
+        "Role", secondary=role_permissions, back_populates="permissions"
+    )
 
 
 class Department(Base, BaseMixin):

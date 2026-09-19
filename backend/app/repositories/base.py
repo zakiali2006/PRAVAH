@@ -6,6 +6,7 @@ from app.core.database import Base
 
 ModelType = TypeVar("ModelType", bound=Base)
 
+
 class BaseRepository(Generic[ModelType]):
     def __init__(self, model: Type[ModelType]):
         self.model = model
@@ -29,7 +30,11 @@ class BaseRepository(Generic[ModelType]):
         self, db: Session, *, db_obj: ModelType, obj_in: Union[Dict[str, Any], Any]
     ) -> ModelType:
         obj_data = db_obj.__dict__
-        update_data = obj_in if isinstance(obj_in, dict) else obj_in.model_dump(exclude_unset=True)
+        update_data = (
+            obj_in
+            if isinstance(obj_in, dict)
+            else obj_in.model_dump(exclude_unset=True)
+        )
         for field in obj_data:
             if field in update_data:
                 setattr(db_obj, field, update_data[field])

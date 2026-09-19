@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 from app.core.database import Base
 from app.models.base import BaseMixin
 
+
 class User(Base, BaseMixin):
     __tablename__ = "users"
 
@@ -14,7 +15,9 @@ class User(Base, BaseMixin):
     is_active = Column(Boolean, default=True, nullable=False)
 
     # Relationships
-    refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
+    refresh_tokens = relationship(
+        "RefreshToken", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class OTPVerification(Base, BaseMixin):
@@ -29,7 +32,9 @@ class OTPVerification(Base, BaseMixin):
 class RefreshToken(Base, BaseMixin):
     __tablename__ = "refresh_tokens"
 
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     token_hash = Column(String, nullable=False, unique=True, index=True)
     expires_at = Column(DateTime(timezone=True), nullable=False)
     revoked = Column(Boolean, default=False, nullable=False)

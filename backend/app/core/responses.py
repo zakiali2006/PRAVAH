@@ -59,9 +59,7 @@ def error_response(
         content={
             "status": "error",
             "error_code": (
-                error_code.value
-                if isinstance(error_code, ErrorCode)
-                else error_code
+                error_code.value if isinstance(error_code, ErrorCode) else error_code
             ),
             "message": message,
         },

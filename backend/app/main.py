@@ -66,9 +66,7 @@ async def http_exception_handler(_request: Request, exc: StarletteHTTPException)
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(
-    _request: Request, exc: RequestValidationError
-):
+async def validation_exception_handler(_request: Request, exc: RequestValidationError):
     """Convert Pydantic / FastAPI validation errors to the universal format."""
     errors = exc.errors()
     messages = []
