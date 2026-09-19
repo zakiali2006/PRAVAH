@@ -58,57 +58,35 @@ We are tracking progress against the `phases (1).md` master document.
 
 ---
 
-## 🛠️ How to Run Locally
+## 📚 Documentation
 
-We use Docker to manage local infrastructure (PostgreSQL with pgvector) alongside the FastAPI backend.
+Detailed documentation for the project has been organized into the \docs/\ directory:
 
-### Prerequisites
-1. **Docker Desktop**: Installed and running ([docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop)).
-2. **Node.js**: LTS version (needed for frontend).
-3. **Python**: 3.12+ (for local backend development).
+- [**SETUP.md**](docs/SETUP.md): Step-by-step guide to cloning, running the database via Docker, and starting the frontend and backend locally.
+- [**ARCHITECTURE.md**](docs/ARCHITECTURE.md): An overview of the directory structure, the RBAC system, and the Audit system.
+- [**DATABASE.md**](docs/DATABASE.md): Guidelines on Alembic migrations, PostgreSQL pgvector, and how to use the Seed Framework.
+- [**API.md**](docs/API.md): API response conventions and a map of core authentication routes.
 
-### Quick Start
+---
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd PRAVAH
-   ```
+## 🌿 Branching & Pull Requests
 
-2. **Configure Environment**:
-   ```bash
-   cd backend
-   cp .env.example .env
-   ```
-   *(Fill in any missing keys in `.env` if necessary, though defaults work for local dev.)*
+This repository follows a strict integration process.
 
-3. **Start the Infrastructure (PostgreSQL + Backend)**:
-   From the repository root (where `docker-compose.yml` is):
-   ```bash
-   docker compose up -d postgres
-   ```
-   Wait for postgres to become healthy, then you can optionally run the backend in docker:
-   ```bash
-   docker compose up -d backend
-   ```
-   Alternatively, to run the backend locally (recommended for development):
-   ```bash
-   cd backend
-   python -m venv venv
-   venv\Scripts\activate  # On Windows
-   # source venv/bin/activate  # On Mac/Linux
-   pip install -r requirements.txt
-   alembic upgrade head  # (Coming in Phase 3)
-   python -m app.seed.seed  # (Coming in Phase 7)
-   uvicorn app.main:app --reload --port 8000
-   ```
-   *The backend API will be available at `http://localhost:8000/api/health` and Swagger at `http://localhost:8000/docs`.*
+### Branch Protection Rules
+We highly recommend setting the following repository rules in GitHub for the \main\ and \develop\ branches:
+- **Require a pull request before merging.**
+- **Require at least 1 approval.**
+- **Require status checks to pass before merging** (The PRAVAH CI GitHub Action).
 
-4. **Start the Frontend**:
-   Open a new terminal at the project root:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-   *The frontend will run at `http://localhost:5173`.*
+### Branch Naming Convention
+When branching off \develop\, follow the format:
+- Features: \eature/<your-name>/<feature-name>\ (e.g. \eature/vinayak/database\)
+- Bugs: \ugfix/<your-name>/<bug-name>
+### Pull Request Checklist
+When opening a PR, a template will automatically populate. Ensure you check off:
+- Tests pass (\pytest\).
+- Linting and formatting pass (\lack\, \lake8\, pm run lint\).
+- Frontend builds cleanly (pm run build\).
+- Documentation is updated.
+- No secrets (\.env\) are accidentally tracked.
