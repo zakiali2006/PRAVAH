@@ -15,6 +15,9 @@ class Settings(BaseSettings):
 
     # --- Database ---
     DATABASE_URL: str = "postgresql://user:password@localhost:5432/pravah_db"
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 10
+    DB_POOL_PRE_PING: bool = True
 
     # --- Security & Auth ---
     SECRET_KEY: str = "change-me-in-production"
