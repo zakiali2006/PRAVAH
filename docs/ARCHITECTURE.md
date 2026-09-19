@@ -104,3 +104,55 @@ Available `AuditAction` constants (add more to `app/services/audit_service.py` i
 - `RULE_MODIFICATION`
 - `OFFICER_ASSIGNMENT`
 - `PAYMENT_UPDATE`
+
+## Seed Framework
+
+PRAVAH uses a **registry-based seed framework** for populating the database with demo/test data.
+
+### Running Seeds
+
+```bash
+# Seed existing database (idempotent — safe to re-run)
+python -m app.seed.seed
+
+# Dev-only: wipe and rebuild the entire database, then seed
+python -m app.seed.reset_and_seed
+```
+
+### Adding Your Own Seed Module
+
+1. Create a file `app/seed/seed_<your_domain>.py`:
+```python
+from sqlalchemy.orm import Session
+from app.models.your_model import YourModel
+
+def seed_your_domain(db: Session):
+    # Check for existence before creating (idempotency)
+    existing = db.query(YourModel).filter(YourModel.name == "Example").first()
+    if existing:
+        return
+    obj = YourModel(name="Example")
+    db.add(obj)
+    db.commit()
+```
+
+2. Register it in `app/seed/seed.py` by adding a tuple to `SEED_REGISTRY`:
+```python
+SEED_REGISTRY = [
+    ("RBAC (Roles & Permissions)", "app.seed.seed_rbac", "seed_rbac"),
+    ("Demo Users", "app.seed.seed_users", "seed_users"),
+    ("Departments", "app.seed.seed_departments", "seed_departments"),
+    # Add yours here:
+    ("Your Domain", "app.seed.seed_your_domain", "seed_your_domain"),
+]
+```
+
+### Demo Credentials
+
+| Email | Password | Role |
+|---|---|---|
+| `demo@gmail.com` | `demo123` | INVESTOR |
+| `officer@gov.in` | `admin123` | OFFICER |
+| `admin@pravah.gov.in` | `admin123` | SYSTEM_ADMIN |
+| `policy@pravah.gov.in` | `admin123` | POLICY_ADMIN |
+
