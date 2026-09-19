@@ -158,7 +158,7 @@ export function DocumentDrive() {
                         ) : doc.status === 'ai_flagged' ? (
                           <span className="text-rose-600 flex items-center font-semibold bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
                             <AlertTriangle size={12} className="mr-1" />
-                            AI Flagged: Name Mismatch
+                            AI Flagged: Review Required
                           </span>
                         ) : (
                           <span className="text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Pending AI Review</span>

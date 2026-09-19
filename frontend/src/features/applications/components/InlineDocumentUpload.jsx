@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
-import { validateDocument } from '../../../api/client';
+import { uploadDocumentAPI, validateDocumentAPI } from '../../../api/client';
 import { C } from '../../../constants/theme';
 
 export function InlineDocumentUpload({ onValidationComplete }) {
@@ -18,13 +18,21 @@ export function InlineDocumentUpload({ onValidationComplete }) {
     setResult(null);
 
     try {
-      const response = await validateDocument(selectedFile);
+      // 1. Upload
+      const uploadRes = await uploadDocumentAPI(selectedFile, 1);
+      const documentId = uploadRes.data.id;
+
+      // 2. Validate
+      const validationRes = await validateDocumentAPI(documentId);
+      const data = validationRes.data;
+
+      const isPass = data.status === 'VALID';
       setResult({
-        success: response.status === 'Pass',
-        proof: response.proof
+        success: isPass,
+        proof: isPass ? "Document successfully validated" : (data.reasons?.join(', ') || 'Validation failed')
       });
       if (onValidationComplete) {
-        onValidationComplete(response.status === 'Pass');
+        onValidationComplete(isPass);
       }
     } catch (err) {
       setResult({

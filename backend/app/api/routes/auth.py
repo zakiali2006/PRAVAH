@@ -115,6 +115,35 @@ def login(user_in: UserLogin, db: Session = Depends(get_db)):
     )
 
 
+from fastapi.security import OAuth2PasswordRequestForm
+
+
+@router.post("/swagger-login", include_in_schema=False)
+def swagger_login(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+):
+    """Dedicated endpoint for Swagger UI Authorization button to work properly."""
+    user = user_repo.get_by_email(db, email=form_data.username)
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise AppException(
+            status_code=401,
+            error_code="INVALID_CREDENTIALS",
+            message="Invalid email or password",
+        )
+    if not user.is_active:
+        raise AppException(
+            status_code=401,
+            error_code="INACTIVE_USER",
+            message="Inactive user",
+        )
+
+    access_token = create_access_token(subject=user.id)
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+    }
+
+
 @router.post("/logout")
 def logout(refresh_token: str, db: Session = Depends(get_db)):
     token_h = hash_token(refresh_token)

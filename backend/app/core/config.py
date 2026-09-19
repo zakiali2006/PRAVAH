@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     # --- AI & LLM Integrations ---
     OPENAI_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
-    AI_MODEL_TEXT: str = ""
+    AI_MODEL_TEXT: str = "gemini-1.5-flash"
     AI_MODEL_VISION: str = ""
     MAX_TOKENS: int = 2000
 
@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
+
+    # --- Document Storage ---
+    STORAGE_TYPE: str = "local"  # "local" or "cloud"
+    UPLOAD_DIR: str = "uploads"
+    MAX_UPLOAD_SIZE_MB: int = 10
+    ALLOWED_DOCUMENT_TYPES: list[str] = ["application/pdf", "image/jpeg", "image/png"]
 
     # --- CORS ---
     CORS_ORIGINS: list[str] = [

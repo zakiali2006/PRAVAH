@@ -24,7 +24,9 @@ def protected_by_perm(user=Depends(PermissionChecker(["view_audit"]))):
 
 
 # Ensure the router is only included once
-if not any(getattr(r, "path", None) == "/api/test-rbac/protected-role" for r in app.routes):
+if not any(
+    getattr(r, "path", None) == "/api/test-rbac/protected-role" for r in app.routes
+):
     app.include_router(test_router, prefix="/api/test-rbac")
 
 

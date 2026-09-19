@@ -35,4 +35,11 @@ Thumbs.db
 !.env.example
 firebase-credentials.json
 
+# App Data & Scratch Files
+uploads/
+scratch_*.py
+*.png
+*.jpg
+*.pdf
+
 phases.md
