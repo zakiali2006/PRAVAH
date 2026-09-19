@@ -57,3 +57,50 @@ def delete_resource(
 ## Security Best Practices
 - **Do not** write raw SQL `WHERE role = '...'` to check permissions in services. Always enforce it at the router boundary using dependencies.
 - Ensure any data you return is properly scoped (e.g. an `INVESTOR` should only see their own applications, even if they have the `view_applications` permission). RBAC handles the *capability*, but your SQL queries must handle the *ownership*.
+
+## Audit System
+
+PRAVAH maintains a strict, centralized audit log for tracking important user actions and mutations. All team members must log mutations in their domains.
+
+### How to Log an Action
+
+We provide a centralized `audit_service` which atomically attaches a log to your current database session. Because it **does not commit**, if your transaction fails and rolls back, the audit log cleanly rolls back with it.
+
+1. **Import the service and Action constants:**
+```python
+from app.services.audit_service import audit_service, AuditAction
+```
+
+2. **Call `.log()` before your `db.commit()`:**
+```python
+@router.post("/applications/{id}/approve")
+def approve_application(id: int, db: Session = Depends(get_db), user = Depends(get_current_active_user)):
+    # 1. Do your business logic...
+    app_obj = db.query(Application).get(id)
+    old_status = app_obj.status
+    app_obj.status = "APPROVED"
+    
+    # 2. Log the change
+    audit_service.log(
+        db=db,
+        actor_id=user.id,
+        action=AuditAction.APPLICATION_STATUS_CHANGE,
+        entity_type="application",
+        entity_id=str(app_obj.id),
+        before_data={"status": old_status},
+        after_data={"status": "APPROVED"}
+    )
+    
+    # 3. Commit atomically
+    db.commit()
+    return {"message": "Approved"}
+```
+
+Available `AuditAction` constants (add more to `app/services/audit_service.py` if needed):
+- `USER_REGISTER`, `USER_LOGIN`, `USER_LOGOUT`
+- `APPLICATION_STATUS_CHANGE`
+- `DOCUMENT_UPLOAD`
+- `GRIEVANCE_ACTION`
+- `RULE_MODIFICATION`
+- `OFFICER_ASSIGNMENT`
+- `PAYMENT_UPDATE`

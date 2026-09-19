@@ -39,10 +39,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
             message="User with this email already exists",
         )
 
-    # Audit hook: wire into audit service in Phase 6
-    # audit_service.log(..., action="USER_REGISTER")
-
-    user_repo.create(
+    user = user_repo.create(
         db,
         obj_in={
             "email": user_in.email,
@@ -52,6 +49,19 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
             "is_active": True,
         },
     )
+
+    from app.services.audit_service import audit_service, AuditAction
+
+    audit_service.log(
+        db=db,
+        actor_id=user.id,
+        action=AuditAction.USER_REGISTER,
+        entity_type="user",
+        entity_id=str(user.id),
+        after_data={"email": user.email, "role": user.role},
+    )
+    db.commit()
+
     return success_response(message="User registered successfully")
 
 
@@ -84,6 +94,17 @@ def login(user_in: UserLogin, db: Session = Depends(get_db)):
         },
     )
 
+    from app.services.audit_service import audit_service, AuditAction
+
+    audit_service.log(
+        db=db,
+        actor_id=user.id,
+        action=AuditAction.USER_LOGIN,
+        entity_type="user",
+        entity_id=str(user.id),
+    )
+    db.commit()
+
     return success_response(
         data={
             "access_token": access_token,
@@ -97,6 +118,18 @@ def login(user_in: UserLogin, db: Session = Depends(get_db)):
 @router.post("/logout")
 def logout(refresh_token: str, db: Session = Depends(get_db)):
     token_h = hash_token(refresh_token)
+
+    # We need the user_id for the audit log, let's get the token before revoking
+    token_entry = refresh_token_repo.get(
+        db, id=token_h
+    )  # Note: ID is token_h in our model, or we can fetch by token_hash
+    # Actually, the repo might not expose user easily this way. Let's get user by token_hash.
+    from sqlalchemy import select
+    from app.models.user import RefreshToken
+
+    stmt = select(RefreshToken).where(RefreshToken.token_hash == token_h)
+    token_entry = db.execute(stmt).scalar_one_or_none()
+
     revoked = refresh_token_repo.revoke_token(db, token_h)
     if not revoked:
         raise AppException(
@@ -104,6 +137,19 @@ def logout(refresh_token: str, db: Session = Depends(get_db)):
             error_code="INVALID_TOKEN",
             message="Invalid or expired token",
         )
+
+    if token_entry:
+        from app.services.audit_service import audit_service, AuditAction
+
+        audit_service.log(
+            db=db,
+            actor_id=token_entry.user_id,
+            action=AuditAction.USER_LOGOUT,
+            entity_type="user",
+            entity_id=str(token_entry.user_id),
+        )
+        db.commit()
+
     return success_response(message="Logged out successfully")
 
 

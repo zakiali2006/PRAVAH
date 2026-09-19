@@ -20,9 +20,13 @@ api_router.include_router(health.router, tags=["Health"])
 # ---------------------------------------------------------------------------
 # Team member routers — uncomment as they are implemented
 # ---------------------------------------------------------------------------
-from app.api.routes import auth
+from app.api.routes import (
+    auth,
+    audit,
+)
 
-api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
+api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+api_router.include_router(audit.router, prefix="/audit", tags=["Audit System"])
 
 # from app.api.routes import services
 # api_router.include_router(services.router, prefix="/services", tags=["Services"])
