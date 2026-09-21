@@ -20,9 +20,9 @@ def seed_database():
         print("Seeding Dummy User (Uploader ID 1)...")
         # Ensure a user with ID 1 exists so uploader_id=1 doesn't fail
         cur.execute("""
-            INSERT INTO users (id, email, hashed_password, role) 
+            INSERT INTO users (id, email, hashed_password, role, is_active) 
             VALUES 
-                (1, 'test@acme.com', 'dummyhash', 'BUSINESS')
+                (1, 'test@acme.com', 'dummyhash', 'BUSINESS', true)
             ON CONFLICT (id) DO NOTHING;
         """)
 
