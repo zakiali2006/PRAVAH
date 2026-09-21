@@ -41,6 +41,13 @@ def extract_structured_data(
         ),
     )
 
-    # response.text should be valid JSON string conforming to the schema
-    json_data = json.loads(response.text)
+    text = response.text.strip()
+    if text.startswith("```json"):
+        text = text[7:]
+    elif text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+
+    json_data = json.loads(text.strip())
     return DocumentExtractionResult(**json_data)

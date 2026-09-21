@@ -72,4 +72,5 @@ def extract_raw_text(file_path: str, mime_type: str) -> str:
             temperature=0.0,  # Deterministic OCR
         ),
     )
+
     return response.text.strip()

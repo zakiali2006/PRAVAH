@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     # --- AI & LLM Integrations ---
     OPENAI_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
-    AI_MODEL_TEXT: str = "gemini-3.6-flash"
+    AI_MODEL_TEXT: str = "gemini-3.5-flash"
     AI_MODEL_VISION: str = ""
     MAX_TOKENS: int = 2000
 
