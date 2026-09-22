@@ -301,7 +301,7 @@ from app.api.deps import RoleChecker
 
 @router.get("/admin-only")
 def admin_only_example(
-    current_user=Depends(RoleChecker(["SYSTEM_ADMIN", "POLICY_ADMIN"]))
+    current_user=Depends(RoleChecker(["POLICY_ADMIN"]))
 ):
     """
     Example endpoint demonstrating how to restrict access to specific roles.

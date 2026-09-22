@@ -88,7 +88,7 @@ def create_document_type(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Depending on RBAC, we might want to restrict this to SYSTEM_ADMIN
+    # Depending on RBAC, we might want to restrict this to POLICY_ADMIN
     existing = db.query(DocumentType).filter(DocumentType.name == doc_type.name).first()
     if existing:
         return error_response(ErrorCode.CONFLICT, "Document type already exists", 409)

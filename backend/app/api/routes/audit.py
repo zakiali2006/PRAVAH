@@ -17,12 +17,12 @@ def get_audit_logs(
     limit: int = Query(50, ge=1, le=100),
     action: Optional[str] = None,
     entity_type: Optional[str] = None,
-    current_user=Depends(RoleChecker(["SYSTEM_ADMIN", "POLICY_ADMIN"])),
+    current_user=Depends(RoleChecker(["POLICY_ADMIN"])),
     db: Session = Depends(get_db),
 ):
     """
     Retrieve audit logs.
-    Restricted to SYSTEM_ADMIN and POLICY_ADMIN.
+    Restricted to POLICY_ADMIN.
     """
     stmt = select(AuditLog).order_by(desc(AuditLog.created_at))
 
