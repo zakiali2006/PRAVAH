@@ -7,6 +7,7 @@ import { Btn } from "../common/Btn";
 import { AccessibilityBar } from "../accessibility/AccessibilityBar";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "../../contexts/TranslationContext";
+import { NAVIGATION } from "../../config/navigation";
 
 export function Header({ a11y, setA11y }) {
   const [open, setOpen] = useState(false);
@@ -27,36 +28,7 @@ export function Header({ a11y, setA11y }) {
     { label: t.nav.contact, path: "contact" },
   ];
 
-  const privateLinks = [
-    { label: t.nav.dashboard, path: "dashboard" },
-    {
-      label: t.nav.applications,
-      subLinks: [
-        { label: t.nav.wizard, path: "wizard" },
-        { label: t.nav.track, path: "track" },
-        { label: t.nav.calc, path: "calc" },
-        { label: t.nav.consultation, path: "consultations" },
-      ]
-    },
-    {
-      label: t.nav.business,
-      subLinks: [
-        { label: t.nav.businessDetails, path: "business" },
-        { label: t.nav.factory, path: "factory" },
-        { label: t.nav.docs, path: "drive" },
-        { label: t.nav.payments, path: "payments" },
-        { label: t.nav.audit, path: "audit" },
-      ]
-    },
-    {
-      label: t.nav.helpdesk,
-      subLinks: [
-        { label: t.nav.queries, path: "queries" },
-        { label: t.nav.grievance, path: "grievance" },
-        { label: t.nav.feedback, path: "feedback" },
-      ]
-    }
-  ];
+  const privateLinks = currentUser && NAVIGATION[currentUser.role] ? NAVIGATION[currentUser.role] : [];
 
   const navItems = currentUser ? [...publicLinks, ...privateLinks] : publicLinks;
 

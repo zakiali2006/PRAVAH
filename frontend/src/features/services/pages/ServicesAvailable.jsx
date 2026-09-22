@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ChevronsUpDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../contexts/AuthContext";
 
 const DUMMY_SERVICES = [
   "Form A - Electrical Installations - Other than Overhead Line",
@@ -25,6 +26,7 @@ const DEPARTMENTS = [
 
 export function ServicesAvailable() {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const totalPages = 10;
@@ -139,7 +141,7 @@ export function ServicesAvailable() {
                   <td className="py-3 px-4 pr-12">{row.serviceName}</td>
                   <td className="py-3 px-4 text-center">
                     <button 
-                      onClick={() => navigate('/apply')}
+                      onClick={() => currentUser ? navigate('/app/apply') : navigate('/login')}
                       className="bg-[#198754] text-white px-3 py-1 text-xs rounded hover:bg-[#157347] transition-colors whitespace-nowrap shadow-sm"
                     >
                       Apply Now

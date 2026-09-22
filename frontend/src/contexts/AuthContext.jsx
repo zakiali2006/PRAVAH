@@ -23,12 +23,13 @@ export function AuthProvider({ children }) {
     fetchUser();
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (email, password, portalType = null) => {
     try {
-      const response = await api.post('/auth/login', { 
-        email, 
-        password 
-      });
+      const payload = { email, password };
+      if (portalType) {
+        payload.portal_type = portalType;
+      }
+      const response = await api.post('/auth/login', payload);
       const token = response.data.data.access_token;
       localStorage.setItem('token', token);
       
