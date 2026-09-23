@@ -20,7 +20,8 @@ import { MockAppProvider } from "../contexts/MockAppContext";
 import { RoleGuard } from "../auth/RoleGuard";
 import { ROLES } from "../config/roles";
 
-// Layouts removed
+// Layouts
+import { AuthenticatedLayout } from "../components/layout/AuthenticatedLayout";
 
 // Public Pages
 import { Home } from "../features/home/pages/Home";
@@ -94,7 +95,9 @@ function AppRoutes() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
+          </Route>
 
+          <Route element={<AuthenticatedLayout a11y={a11y} setA11y={setA11y} />}>
             {/* Investor Routes */}
             <Route path="/app" element={
               <RoleGuard allowedRoles={[ROLES.INVESTOR]}>
