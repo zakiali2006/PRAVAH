@@ -1,30 +1,50 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Loader2, Check, Clock, AlertTriangle, ArrowRight, Network, FileText, ShieldCheck, Calendar, Award, ChevronRight, Building } from "lucide-react";
 import { SectionHead } from "../../../components/common/SectionHead";
 import { Btn } from "../../../components/common/Btn";
 import { C } from "../../../constants/theme";
-import { useMockApp } from "../../../contexts/MockAppContext";
+import { applicationAPI } from "../../../api/services";
 
 export function ServicesApplied() {
   const [view, setView] = useState('journey'); // 'journey' or 'roadmap'
-  const state = useMockApp();
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // Hardcoded for demo purposes as in the original dashboard
   const isFireNOCUploaded = false; 
+  const documents = []; // Mock documents, since we haven't integrated docs API yet
+  const compliances = []; // Mock compliances
+
+  useEffect(() => {
+    const fetchApps = async () => {
+      setLoading(true);
+      try {
+        const res = await applicationAPI.list();
+        setApplications(res.data.data || []);
+      } catch (err) {
+        setError('Failed to load applications.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchApps();
+  }, []);
 
   const intelligenceStats = useMemo(() => {
-    const active = state.applications.filter((a) => a.status === 'pending' || a.status === 'scrutiny').length;
-    const atRisk = state.applications.filter((a) => a.status === 'action_required' || a.status === 'rejected').length;
-    const completed = state.applications.filter((a) => a.status === 'approved').length;
+    const active = applications.filter((a) => a.status === 'DRAFT' || a.status === 'SUBMITTED' || a.status === 'UNDER_REVIEW' || a.status === 'QUERY_RAISED' || a.status === 'PAYMENT_PENDING').length;
+    const atRisk = applications.filter((a) => a.status === 'REJECTED').length;
+    const completed = applications.filter((a) => a.status === 'APPROVED').length;
 
-    const healthy = state.documents.filter((d) => d.status === 'verified').length;
-    const needsAttention = state.documents.filter((d) => d.status === 'rejected' || (d.issues && d.issues.length > 0)).length;
+    const healthy = documents.filter((d) => d.status === 'verified').length;
+    const needsAttention = documents.filter((d) => d.status === 'rejected' || (d.issues && d.issues.length > 0)).length;
     const missing = isFireNOCUploaded ? 0 : 1;
 
-    const overdue = state.compliances ? state.compliances.filter((c) => c.status === 'overdue').length : 0;
+    const overdue = compliances ? compliances.filter((c) => c.status === 'overdue').length : 0;
 
     return {
-      apps: { active: active || 3, atRisk: atRisk || 1, completed: completed || 2 },
+      apps: { active: active || 0, atRisk: atRisk || 0, completed: completed || 0 },
       docs: { healthy: healthy || 4, needsAttention: needsAttention || 1, missing: missing },
       compliance: { upcomingDeadline: 'Form V Environmental Return (30 Sep)', overdueCount: overdue },
       opportunities: {
@@ -33,7 +53,15 @@ export function ServicesApplied() {
         regulatory: 'DISH Plan Self-Certification GR'
       }
     };
-  }, [state, isFireNOCUploaded]);
+  }, [applications, isFireNOCUploaded, documents, compliances]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="animate-spin text-blue-600" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">

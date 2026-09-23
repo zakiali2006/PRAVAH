@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Compass, ArrowRight, CheckCircle2, Building, 
-  Zap 
+  Zap, Loader2 
 } from 'lucide-react';
 import { GOVERNMENT_SERVICES_CATALOG } from '../../../data/mockData';
+import { wizardAPI } from '../../../api/services';
 
-
-
-export const InvestorWizard = ({ onApplyForServices }) => {
+export const InvestorWizard = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [sector, setSector] = useState('Automotive & Engineering');
   const [investmentTier, setInvestmentTier] = useState('Large (₹ 50 Cr - ₹ 500 Cr)');
@@ -16,6 +17,8 @@ export const InvestorWizard = ({ onApplyForServices }) => {
   const [hasHazardousChemicals, setHasHazardousChemicals] = useState(true);
   const [powerRequirementKva, setPowerRequirementKva] = useState(5000);
   const [waterRequirementKld, setWaterRequirementKld] = useState(150);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Calculate recommended clearances
   const recommendedClearances = React.useMemo(() => {
@@ -32,6 +35,35 @@ export const InvestorWizard = ({ onApplyForServices }) => {
   const recommendedServices = GOVERNMENT_SERVICES_CATALOG.filter((s) => 
     recommendedClearances.includes(s.code)
   );
+
+  const handleGenerateRoadmap = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const payload = {
+        answers: {
+          sector,
+          investmentTier,
+          district,
+          landStatus,
+          hasHazardousChemicals,
+          powerRequirementKva,
+          waterRequirementKld,
+        },
+      };
+      await wizardAPI.createRun(payload);
+      setStep(3);
+    } catch (err) {
+      setError('Failed to save wizard run.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAutoFillCAF = async () => {
+    navigate('/app/dashboard');
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-8">
@@ -63,6 +95,12 @@ export const InvestorWizard = ({ onApplyForServices }) => {
           ))}
         </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 text-sm">
+          {error}
+        </div>
+      )}
 
       {/* Step 1: Enterprise & Location Details */}
       {step === 1 && (
@@ -220,11 +258,21 @@ export const InvestorWizard = ({ onApplyForServices }) => {
               Back
             </button>
             <button
-              onClick={() => setStep(3)}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-6 py-3 rounded-xl transition-all shadow flex items-center space-x-2"
+              onClick={handleGenerateRoadmap}
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-6 py-3 rounded-xl transition-all shadow flex items-center space-x-2 disabled:opacity-70"
             >
-              <span>Generate Approval Roadmap</span>
-              <ArrowRight size={14} />
+              {loading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <span>Generate Approval Roadmap</span>
+                  <ArrowRight size={14} />
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -278,7 +326,7 @@ export const InvestorWizard = ({ onApplyForServices }) => {
               Modify Answers
             </button>
             <button
-              onClick={() => onApplyForServices(recommendedClearances)}
+              onClick={handleAutoFillCAF}
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs px-8 py-3.5 rounded-xl transition-all shadow-md flex items-center space-x-2"
             >
               <span>Auto-Fill Common Application Form (CAF)</span>

@@ -4,26 +4,31 @@ import { X, Loader2 } from 'lucide-react';
 export function EditProfileModal({ profile, onClose, onSave }) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: profile?.name || '',
-    panNumber: profile?.panNumber || '',
+    company_name: profile?.company_name || '',
+    pan_number: profile?.pan_number || '',
     gstin: profile?.gstin || '',
     industry: profile?.industry || '',
-    investment: profile?.investment || ''
+    investment_value: profile?.investment_value || ''
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await onSave(profile.id, formData);
-    setLoading(false);
-    onClose();
+    try {
+      await onSave(formData);
+      onClose();
+    } catch (err) {
+      console.error('Save failed:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white max-w-lg w-full rounded-2xl p-6 shadow-2xl border border-slate-200">
         <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
-          <h3 className="font-extrabold text-lg text-slate-900">Edit Primary Entity Profile</h3>
+          <h3 className="font-extrabold text-lg text-slate-900">{profile ? 'Edit Primary Entity Profile' : 'Create Business Profile'}</h3>
           <button onClick={onClose} disabled={loading} className="text-slate-400 hover:text-slate-600 disabled:opacity-50">
             <X size={20} />
           </button>
@@ -34,8 +39,8 @@ export function EditProfileModal({ profile, onClose, onSave }) {
             <label className="block text-sm font-bold text-slate-700 mb-1">Company Name</label>
             <input
               type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              value={formData.company_name}
+              onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
               className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-semibold"
               required
               disabled={loading}
@@ -47,8 +52,8 @@ export function EditProfileModal({ profile, onClose, onSave }) {
               <label className="block text-sm font-bold text-slate-700 mb-1">PAN Number</label>
               <input
                 type="text"
-                value={formData.panNumber}
-                onChange={(e) => setFormData({ ...formData, panNumber: e.target.value })}
+                value={formData.pan_number}
+                onChange={(e) => setFormData({ ...formData, pan_number: e.target.value })}
                 className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase font-mono"
                 required
                 disabled={loading}
@@ -83,8 +88,8 @@ export function EditProfileModal({ profile, onClose, onSave }) {
             <label className="block text-sm font-bold text-slate-700 mb-1">Total Investment</label>
             <input
               type="text"
-              value={formData.investment}
-              onChange={(e) => setFormData({ ...formData, investment: e.target.value })}
+              value={formData.investment_value}
+              onChange={(e) => setFormData({ ...formData, investment_value: e.target.value })}
               placeholder="e.g. ₹ 450 Crores"
               className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium"
               disabled={loading}
