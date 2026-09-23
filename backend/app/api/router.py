@@ -56,9 +56,13 @@ api_router.include_router(audit.router, prefix="/audit", tags=["Audit System"])
 
 from app.api.routes import documents
 from app.api.routes import business_profile
+from app.api.routes import factory_unit
+from app.api.routes import service
 
 api_router.include_router(documents.router, prefix="/documents", tags=["Documents"])
 api_router.include_router(business_profile.router, prefix="/business-profile", tags=["Business Profile"])
+api_router.include_router(factory_unit.router, prefix="/factory-units", tags=["Factory Units"])
+api_router.include_router(service.router, prefix="/services", tags=["Service Catalogue"])
 
 # from app.api.routes import officer
 # api_router.include_router(
