@@ -7,3 +7,4 @@ from app.models.application import Application
 from app.models.stage import Stage
 from app.models.document import Document, DocumentType, ApplicationDocument
 from app.models.document_chunk import DocumentChunk
+from app.models.business_profile import BusinessProfile
