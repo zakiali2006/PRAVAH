@@ -6,8 +6,8 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 # Standard Gemini embedding model (768-dimensional vectors)
-EMBEDDING_MODEL = "text-embedding-004"
-EMBEDDING_DIMENSION = 768
+EMBEDDING_MODEL = "gemini-embedding-001"
+EMBEDDING_DIMENSION = 3072
 
 
 class EmbeddingError(Exception):

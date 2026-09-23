@@ -48,3 +48,8 @@ class ApplicationOut(ApplicationBase):
 class DocumentUpload(BaseModel):
     document_type_id: int
     document_id: int
+
+
+class ApplicationTransition(BaseModel):
+    new_status: str
+    desc: Optional[str] = None

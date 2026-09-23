@@ -199,9 +199,9 @@ def test_pay_application(client):
     assert data["data"]["status"] == "completed"
     assert data["data"]["reference_id"] is not None
 
-    # After payment, verify application status changed to pending
+    # After payment, verify application status changed to SUBMITTED
     app_resp = client.get(f"/api/applications/{app_id}", headers=headers)
-    assert app_resp.json()["data"]["status"] == "pending"
+    assert app_resp.json()["data"]["status"] == "SUBMITTED"
 
 
 def test_officer_can_see_all_applications(client):

@@ -11,6 +11,7 @@ from app.schemas.application import (
     ApplicationOut,
     DocumentUpload,
     StageOut,
+    ApplicationTransition,
 )
 from app.schemas.payment import PaymentCreate, PaymentOut
 from app.services.application_service import application_service
@@ -105,4 +106,25 @@ def pay_application(
     return success_response(
         data=PaymentOut.model_validate(payment).model_dump(),
         message="Payment processed successfully.",
+    )
+
+
+@router.post("/applications/{id}/transition", response_model=Any)
+def transition_application(
+    id: str,
+    obj_in: ApplicationTransition,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    application = application_service.transition_status(
+        db,
+        user_id=current_user.id,
+        role=current_user.role,
+        application_id=id,
+        new_status=obj_in.new_status,
+        desc=obj_in.desc,
+    )
+    return success_response(
+        data=ApplicationOut.model_validate(application).model_dump(),
+        message=f"Application status updated to {obj_in.new_status}.",
     )

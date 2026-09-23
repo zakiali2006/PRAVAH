@@ -10,6 +10,8 @@ from app.schemas.payment import PaymentCreate
 from app.repositories.application_repository import application_repo
 from app.services.payment_adapter import payment_adapter
 from app.core.exceptions import AppException
+from app.services.state_machine import state_machine
+from app.services.audit_service import audit_service
 
 
 class ApplicationService:
@@ -33,16 +35,26 @@ class ApplicationService:
             application_id=application.id,
             name="Draft Created",
             desc="Application drafted by investor.",
-            status="completed",
+            status="DRAFT",
             days=0,
         )
         application_repo.add_stage(db, stage)
 
         # Update current stage
         application.current_stage_id = stage.id
+        application.status = "DRAFT"
         db.add(application)
         db.commit()
         db.refresh(application)
+
+        audit_service.log(
+            db=db,
+            actor_id=user_id,
+            action="CREATE_APPLICATION",
+            entity_type="application",
+            entity_id=application.id,
+            after_data={"status": "DRAFT"},
+        )
 
         return application
 
@@ -104,19 +116,14 @@ class ApplicationService:
 
         # Update stage to submitted if payment completed
         if result["status"] == "completed":
-            application.status = "pending"
-            application.is_draft = False
-
-            stage = Stage(
+            self.transition_status(
+                db=db,
+                user_id=user_id,
+                role="INVESTOR",
                 application_id=application.id,
-                name="Application Submitted",
+                new_status="SUBMITTED",
                 desc="Payment received and application submitted.",
-                status="completed",
-                days=0,
             )
-            application_repo.add_stage(db, stage)
-            application.current_stage_id = stage.id
-            db.add(application)
 
         db.commit()
         db.refresh(payment)
@@ -164,6 +171,62 @@ class ApplicationService:
                 error_code="ACCESS_DENIED",
                 message="Cannot view this application",
             )
+
+        return application
+
+    def transition_status(
+        self,
+        db: Session,
+        user_id: int,
+        role: str,
+        application_id: str,
+        new_status: str,
+        desc: str = None,
+    ) -> Application:
+        application = application_repo.get(db, application_id)
+        if not application:
+            raise AppException(
+                status_code=404,
+                error_code="RESOURCE_NOT_FOUND",
+                message="Application not found",
+            )
+
+        current_status = application.status or "DRAFT"
+
+        # Validate transition using state machine
+        state_machine.validate_transition(current_status, new_status, role)
+
+        # Update application status
+        application.status = new_status
+        if new_status == "SUBMITTED":
+            application.is_draft = False
+
+        # Add tracking stage
+        stage_name = new_status.replace("_", " ").title()
+        stage = Stage(
+            application_id=application.id,
+            name=stage_name,
+            desc=desc or f"Application transitioned to {stage_name}",
+            status=new_status,
+            days=0,
+        )
+        application_repo.add_stage(db, stage)
+        application.current_stage_id = stage.id
+
+        db.add(application)
+
+        # Log audit
+        audit_service.log(
+            db=db,
+            actor_id=user_id,
+            action="APPLICATION_STATUS_TRANSITION",
+            entity_type="application",
+            entity_id=application.id,
+            after_data={"status": new_status, "previous_status": current_status},
+        )
+
+        db.commit()
+        db.refresh(application)
 
         return application
 

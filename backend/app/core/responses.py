@@ -26,6 +26,7 @@ class ErrorCode(str, Enum):
     INTERNAL_ERROR = "INTERNAL_ERROR"
     CONFLICT = "CONFLICT"
     BAD_REQUEST = "BAD_REQUEST"
+    INVALID_STATE_TRANSITION = "INVALID_STATE_TRANSITION"
 
 
 def success_response(
