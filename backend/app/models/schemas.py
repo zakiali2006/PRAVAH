@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
 
@@ -17,4 +17,18 @@ class GrievanceCreate(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(..., min_length=1, max_length=1000, description="User query for RAG Assistant")
+
+
+class ChatSource(BaseModel):
+    document_id: int
+    filename: str
+    chunk_index: int
+    document_type: Optional[str] = None
+    similarity: Optional[float] = None
+
+
+class ChatResponseData(BaseModel):
+    reply: str
+    sources: List[ChatSource] = []
+

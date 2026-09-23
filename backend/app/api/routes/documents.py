@@ -206,7 +206,7 @@ def validate_document(
         from app.engines.ocr_engine import extract_raw_text
         from app.engines.extraction_engine import extract_structured_data
         from app.engines.validation_engine import validate_document_data
-        from app.engines.vectorize_engine import process_document_embeddings
+        from app.engines.vectorize_engine import process_document_embeddings_task
 
         # Phase 4: OCR
         from app.services.storage_service import storage_service
@@ -225,8 +225,8 @@ def validate_document(
             structured_data, mock_expected_business_name
         )
 
-        # Phase 7: Vectorization (Run in background to avoid blocking API response)
-        background_tasks.add_task(process_document_embeddings, db, doc.id, raw_text)
+        # Phase 7: Vectorization (Run in background with self-contained session to avoid session leaks)
+        background_tasks.add_task(process_document_embeddings_task, doc.id, raw_text)
 
         # Persist status to document record
         doc.status = validation_result.status.value

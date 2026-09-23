@@ -1,31 +1,76 @@
-import os
+import logging
 from typing import List
 from google import genai
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+# Standard Gemini embedding model (768-dimensional vectors)
+EMBEDDING_MODEL = "text-embedding-004"
+EMBEDDING_DIMENSION = 768
+
+
+class EmbeddingError(Exception):
+    """Raised when text embedding generation fails."""
+
+    pass
 
 
 def generate_embeddings(texts: List[str]) -> List[List[float]]:
     """
     Kajal's Module: AI Embeddings
-    Uses Gemini text-embedding-004 to generate 768-dimensional vectors.
+    Generates 768-dimensional semantic embeddings using Google Gemini text-embedding-004.
+
+    Strict reliability guarantees:
+    - Never generates or stores random vectors.
+    - If API key is missing or invalid, raises EmbeddingError with server-side logging.
+    - Returns exact float list per text chunk.
     """
     if not texts:
         return []
 
-    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    # Clean and filter texts
+    cleaned_texts = [t.strip() for t in texts if t and t.strip()]
+    if not cleaned_texts:
+        return []
+
+    if not settings.GEMINI_API_KEY:
+        logger.error("Embedding generation failed: GEMINI_API_KEY is not configured.")
+        raise EmbeddingError(
+            "AI embedding service is unconfigured. Please set GEMINI_API_KEY."
+        )
 
     try:
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
         response = client.models.embed_content(
-            model="models/embedding-001",
-            contents=texts,
+            model=EMBEDDING_MODEL,
+            contents=cleaned_texts,
         )
-        if hasattr(response, "embeddings"):
-            return [list(emb.values) for emb in response.embeddings]
-        else:
-            return [list(response.embeddings[i].values) for i in range(len(texts))]
-    except Exception as e:
-        print(f"Gemini Embedding failed: {e}. Falling back to dummy vectors.")
-        # Fallback to dummy 768-d vectors for the hackathon demo if API fails
-        import random
 
-        return [[random.random() for _ in range(768)] for _ in texts]
+        embeddings: List[List[float]] = []
+        if hasattr(response, "embeddings") and response.embeddings:
+            for emb in response.embeddings:
+                values = list(emb.values)
+                if len(values) != EMBEDDING_DIMENSION:
+                    logger.warning(
+                        "Embedding dimension mismatch: expected %d, got %d",
+                        EMBEDDING_DIMENSION,
+                        len(values),
+                    )
+                embeddings.append(values)
+            return embeddings
+
+        # Fallback inspection for alternative response structure
+        if hasattr(response, "embedding") and response.embedding:
+            return [list(response.embedding.values)]
+
+        raise EmbeddingError(
+            "Gemini API returned an empty or unrecognized embedding response."
+        )
+
+    except EmbeddingError:
+        raise
+    except Exception as exc:
+        # Secure logging: do not leak credentials or full raw payloads
+        logger.error("Gemini embedding API call failed: %s", exc)
+        raise EmbeddingError(f"Failed to generate text embeddings: {str(exc)}") from exc
