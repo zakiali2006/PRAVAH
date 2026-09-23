@@ -14,4 +14,6 @@ class Stage(Base):
     days = Column(Integer, default=0)
     statutory_limit = Column(Integer, default=15)
 
-    application = relationship("Application", back_populates="stages")
+    application = relationship(
+        "Application", back_populates="stages", foreign_keys=[application_id]
+    )

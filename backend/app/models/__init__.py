@@ -10,3 +10,4 @@ from app.models.document_chunk import DocumentChunk
 from app.models.business_profile import BusinessProfile
 from app.models.factory_unit import FactoryUnit, MIDCPlot
 from app.models.service import Service
+from app.models.payment import Payment
