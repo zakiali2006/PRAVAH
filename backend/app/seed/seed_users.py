@@ -21,12 +21,6 @@ DEMO_USERS = [
         "is_active": True,
     },
     {
-        "email": "admin@pravah.gov.in",
-        "password": "admin123",
-        "role": "SYSTEM_ADMIN",
-        "is_active": True,
-    },
-    {
         "email": "policy@pravah.gov.in",
         "password": "admin123",
         "role": "POLICY_ADMIN",

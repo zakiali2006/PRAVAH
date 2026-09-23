@@ -14,7 +14,7 @@ test_router = APIRouter()
 
 
 @test_router.get("/protected-role")
-def protected_by_role(user=Depends(RoleChecker(["SYSTEM_ADMIN"]))):
+def protected_by_role(user=Depends(RoleChecker(["POLICY_ADMIN"]))):
     return {"status": "success"}
 
 
@@ -53,7 +53,7 @@ def setup_rbac_db():
         obj_in={
             "email": "admin@test.com",
             "hashed_password": "hash",
-            "role": "SYSTEM_ADMIN",
+            "role": "POLICY_ADMIN",
             "is_active": True,
         },
     )
@@ -98,7 +98,7 @@ def test_investor_fails_permission_check(client):
 
 
 def test_admin_passes_permission_check(client):
-    # SYSTEM_ADMIN automatically passes all permission checks
+    # POLICY_ADMIN automatically passes all permission checks
     headers = get_auth_headers("admin@test.com")
     resp = client.get("/api/test-rbac/protected-permission", headers=headers)
     assert resp.status_code == 200

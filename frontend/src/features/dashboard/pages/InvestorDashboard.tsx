@@ -57,128 +57,143 @@ export const InvestorDashboard = () => {
   const [activeTab, setActiveTab] = useState('count');
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 font-sans" style={{ minHeight: 'calc(100vh - 120px)' }}>
-      {/* MAIN CONTENT */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-
-        {/* TOP TABS */}
-        <div className="bg-white border-b border-slate-200 px-6 flex items-end">
-          <button
-            onClick={() => setActiveTab('count')}
-            className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors ${activeTab === 'count' ? 'border-blue-600 text-blue-700 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-          >
-            Application Count
-          </button>
-          <button
-            onClick={() => setActiveTab('summary')}
-            className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors ${activeTab === 'summary' ? 'border-blue-600 text-blue-700 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-          >
-            Application Summary
-          </button>
-          <button
-            onClick={() => setActiveTab('wise')}
-            className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors ${activeTab === 'wise' ? 'border-blue-600 text-blue-700 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-          >
-            Application Wise Details
-          </button>
+    <div className="w-full max-w-7xl mx-auto p-6 pb-32 font-sans flex flex-col xl:flex-row gap-6">
+      
+      {/* Main Dashboard Area (Left) */}
+      <div className="flex-1 flex flex-col gap-6 min-w-0">
+        
+        {/* AI Next Best Action Banner (Redesigned as Vertical Stack Alert) */}
+        <div className="bg-white border-l-4 border-l-blue-600 border border-y-slate-200 border-r-slate-200 rounded-xl p-5 shadow-sm flex flex-col gap-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-blue-600">
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <h2 className="text-slate-900 font-bold text-base flex items-center gap-2">
+                  AI Next-Best Action
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-600 text-white shadow-sm tracking-wide">High Priority</span>
+                </h2>
+              </div>
+            </div>
+          </div>
+          <p className="text-slate-600 text-sm leading-relaxed max-w-4xl pl-13">
+            Your <strong className="text-slate-900">Consent to Establish (MPCB)</strong> application is at 84% SLA risk due to a pending document query. Submit the required "Environmental Audit Report" within the next 48 hours to avoid an automatic breach.
+          </p>
+          <div className="flex items-center gap-3 justify-end pt-2 border-t border-slate-100">
+            <button className="px-4 py-2 bg-white text-slate-700 font-semibold text-sm rounded-lg border border-slate-300 hover:bg-slate-50 transition-colors shadow-sm">
+              View Roadmap
+            </button>
+            <button onClick={() => navigate('/app/applications')} className="px-4 py-2 bg-blue-600 text-white font-semibold text-sm rounded-lg shadow-sm hover:bg-blue-700 transition-colors">
+              Resolve Query
+            </button>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col lg:flex-row gap-4">
-          
-          {/* Main Dashboard Area (Left) */}
-          <div className="flex-1 space-y-4">
-            
-            {/* AI Next Best Action Banner (Phase 16 & 12) */}
-            <div className="bg-gradient-to-r from-blue-900 to-blue-800 rounded-xl p-4 shadow-lg border border-blue-700 flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-blue-700/50 flex items-center justify-center shrink-0 border border-blue-600">
-                <Sparkles size={24} className="text-blue-300" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h2 className="text-white font-bold text-lg">AI Next-Best Action</h2>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-red-500/20 text-red-200 border border-red-500/30">High Priority</span>
-                </div>
-                <p className="text-blue-200 text-sm leading-relaxed mb-3">
-                  Your <strong className="text-white">Consent to Establish (MPCB)</strong> application is at 84% SLA risk due to a pending document query. Submit the required "Environmental Audit Report" within the next 48 hours to avoid an automatic breach.
-                </p>
-                <div className="flex items-center gap-3">
-                  <button onClick={() => navigate('/track')} className="px-4 py-1.5 bg-saffron text-white font-bold text-sm rounded shadow hover:bg-orange-500 transition-colors">
-                    Resolve Query Now
-                  </button>
-                  <button className="px-4 py-1.5 bg-blue-800 text-blue-200 font-bold text-sm rounded border border-blue-700 hover:bg-blue-700 transition-colors">
-                    View Risk Roadmap
-                  </button>
-                </div>
+        {/* Dashboard Header Row */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mt-2">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">{t.dash.title || "Dashboard Overview"}</h1>
+            <p className="text-sm text-slate-500 mt-1">{t.dash.sub || "Real-time insights and analytics for your organization"}</p>
+          </div>
+
+          {/* Filters */}
+          <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 flex flex-wrap sm:flex-nowrap items-end gap-2 shrink-0">
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wide px-1">From</label>
+              <div className="relative">
+                <CalendarIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input type="text" defaultValue="Jan 1, 2016" className="w-32 pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-blue-500" />
               </div>
             </div>
-
-            {/* Header Row: Title & Filters combined */}
-            <div className="flex flex-wrap lg:flex-nowrap items-end justify-between gap-4 mt-2">
-              <div>
-                <h1 className="text-xl font-bold text-slate-900">{t.dash.title || "Dashboard Overview"}</h1>
-                <p className="text-sm text-slate-500">{t.dash.sub || "Real-time insights and analytics"}</p>
-              </div>
-
-              {/* Filters Row */}
-              <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex flex-wrap sm:flex-nowrap items-end gap-3 shrink-0">
-                <div className="flex-1">
-                  <label className="block text-[11px] font-semibold text-slate-500 mb-0.5">From</label>
-                  <div className="relative">
-                    <CalendarIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input type="text" defaultValue="January 1st, 2016" className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <label className="block text-[11px] font-semibold text-slate-500 mb-0.5">To</label>
-                  <div className="relative">
-                    <CalendarIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input type="text" defaultValue="September 11th, 2026" className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button className="px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-blue-700">Apply</button>
-                </div>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wide px-1">To</label>
+              <div className="relative">
+                <CalendarIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input type="text" defaultValue="Sep 11, 2026" className="w-32 pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-blue-500" />
               </div>
             </div>
+            <button className="px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-blue-700 h-[30px]">
+              Apply
+            </button>
+          </div>
+        </div>
 
             {/* 4 Cards */}
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl p-4 text-white shadow-sm flex justify-between relative overflow-hidden">
-                <div className="absolute -right-2 -bottom-2 opacity-10"><LayoutDashboard size={80} /></div>
-                <div>
-                  <p className="text-xs font-medium text-blue-100">{t.dash.totalServ}</p>
-                  <h3 className="text-2xl font-black mt-1">179</h3>
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0 text-blue-600">
+                    <LayoutDashboard size={20} />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-500">{t.dash.totalServ || "Total Services"}</p>
                 </div>
-                <div className="bg-white/20 p-2 rounded-lg h-fit"><LayoutDashboard size={18} /></div>
-              </div>
-              <div className="bg-gradient-to-r from-purple-600 to-indigo-500 rounded-xl p-4 text-white shadow-sm flex justify-between relative overflow-hidden">
-                <div className="absolute -right-2 -bottom-2 opacity-10"><FileText size={80} /></div>
                 <div>
-                  <p className="text-xs font-medium text-purple-100">{t.dash.apps}</p>
-                  <h3 className="text-2xl font-black mt-1">5,67,805</h3>
-                  <span className="inline-block mt-1 text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold">26.3%</span>
+                  <h3 className="text-3xl font-black text-slate-800">179</h3>
                 </div>
               </div>
-              <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl p-4 text-white shadow-sm flex justify-between relative overflow-hidden">
-                <div className="absolute -right-2 -bottom-2 opacity-10"><AlertTriangle size={80} /></div>
-                <div>
-                  <p className="text-xs font-medium text-orange-100">{t.dash.grievances}</p>
-                  <h3 className="text-2xl font-black mt-1">5,473</h3>
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0 text-indigo-600">
+                    <FileText size={20} />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-500">{t.dash.apps || "Applications"}</p>
+                </div>
+                <div className="flex items-end justify-between">
+                  <h3 className="text-3xl font-black text-slate-800">5,67,805</h3>
+                  <span className="inline-block mb-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">+26.3%</span>
                 </div>
               </div>
-              <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-4 text-white shadow-sm flex justify-between relative overflow-hidden">
-                <div className="absolute -right-2 -bottom-2 opacity-10"><HelpCircle size={80} /></div>
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center shrink-0 text-amber-600">
+                    <AlertTriangle size={20} />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-500">{t.dash.grievances || "Grievances"}</p>
+                </div>
                 <div>
-                  <p className="text-xs font-medium text-emerald-100">{t.dash.queries}</p>
-                  <h3 className="text-2xl font-black mt-1">4,858</h3>
+                  <h3 className="text-3xl font-black text-slate-800">5,473</h3>
                 </div>
               </div>
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center shrink-0 text-teal-600">
+                    <HelpCircle size={20} />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-500">{t.dash.queries || "Queries"}</p>
+                </div>
+                <div>
+                  <h3 className="text-3xl font-black text-slate-800">4,858</h3>
+                </div>
+              </div>
+            </div>
+
+            {/* Application Data Tabs */}
+            <div className="bg-white border-b border-slate-200 px-2 flex items-end mt-4 rounded-t-xl overflow-hidden shadow-sm">
+              <button
+                onClick={() => setActiveTab('count')}
+                className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors ${activeTab === 'count' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+              >
+                Application Count
+              </button>
+              <button
+                onClick={() => setActiveTab('summary')}
+                className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors ${activeTab === 'summary' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+              >
+                Application Summary
+              </button>
+              <button
+                onClick={() => setActiveTab('wise')}
+                className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors ${activeTab === 'wise' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+              >
+                Application Wise Details
+              </button>
             </div>
 
             {/* Charts Area */}
             <div className="grid grid-cols-2 gap-4">
               {/* Main Line Chart */}
-              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm col-span-2 xl:col-span-1 flex flex-col">
+              <div className="bg-white border border-slate-200 rounded-b-xl rounded-tr-xl p-4 shadow-sm col-span-2 xl:col-span-1 flex flex-col">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-bold text-slate-800 text-sm">Services Performance Trend</h3>
                 </div>
@@ -222,7 +237,7 @@ export const InvestorDashboard = () => {
           </div>
           
           {/* Right Sidebar Area (Phases 13 & 14) */}
-          <div className="w-full lg:w-80 shrink-0 space-y-4">
+          <div className="w-full xl:w-80 shrink-0 space-y-6">
             
             {/* Phase 13: Compliance Calendar */}
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
@@ -311,8 +326,6 @@ export const InvestorDashboard = () => {
 
           </div>
 
-        </div>
-      </div>
     </div>
   );
 };

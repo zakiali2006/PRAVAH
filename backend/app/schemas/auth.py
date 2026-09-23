@@ -12,6 +12,7 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+    portal_type: Optional[str] = None
 
 
 class Token(BaseModel):

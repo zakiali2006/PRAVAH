@@ -29,7 +29,7 @@ def setup_audit_db():
         obj_in={
             "email": "admin@test.com",
             "hashed_password": "hash",
-            "role": "SYSTEM_ADMIN",
+            "role": "POLICY_ADMIN",
             "is_active": True,
         },
     )

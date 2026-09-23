@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.rbac import Role, Permission
 
 # Standard Roles
-ROLES = ["INVESTOR", "TRANSACTIONAL_USER", "OFFICER", "POLICY_ADMIN", "SYSTEM_ADMIN"]
+ROLES = ["INVESTOR", "OFFICER", "POLICY_ADMIN"]
 
 # Baseline Permissions for Demonstration
 PERMISSIONS = [
@@ -16,8 +16,7 @@ PERMISSIONS = [
 ROLE_PERMISSIONS_MAP = {
     "INVESTOR": ["view_applications", "edit_applications"],
     "OFFICER": ["view_applications", "review_applications"],
-    "POLICY_ADMIN": ["view_audit", "view_applications", "review_applications"],
-    "SYSTEM_ADMIN": PERMISSIONS,  # Has everything
+    "POLICY_ADMIN": PERMISSIONS,  # Highest-privilege role, has everything
 }
 
 

@@ -17,12 +17,14 @@ def seed_database():
             ON CONFLICT (id) DO NOTHING;
         """)
 
-        print("Seeding Dummy User (Uploader ID 1)...")
-        # Ensure a user with ID 1 exists so uploader_id=1 doesn't fail
+        print("Seeding Demo Users...")
+        from app.core.security import get_password_hash
+        default_pwd = get_password_hash("password123")
+        
         cur.execute("""
             INSERT INTO users (id, email, hashed_password, role, is_active) 
             VALUES 
-                (1, 'test@acme.com', 'dummyhash', 'BUSINESS', true)
+                (1, 'test@acme.com', 'dummyhash', 'BUSINESS')
             ON CONFLICT (id) DO NOTHING;
         """)
 

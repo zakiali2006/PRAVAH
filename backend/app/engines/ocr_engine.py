@@ -2,15 +2,18 @@ import os
 import pymupdf
 from google import genai
 from google.genai import types
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.core.config import settings
 
 
+@retry(wait=wait_exponential(multiplier=1, min=2, max=10), stop=stop_after_attempt(3))
 def extract_raw_text(file_path: str, mime_type: str) -> str:
     """
     Phase 4: OCR Engine
     Extracts raw text exactly as seen in the image or PDF document.
     Uses Google Gemini Vision for accurate, layout-aware OCR.
+    Retries automatically if the API experiences temporary 503 issues.
     """
 
     # 1. Prepare the image bytes
@@ -59,21 +62,15 @@ def extract_raw_text(file_path: str, mime_type: str) -> str:
         settings.AI_MODEL_TEXT if settings.AI_MODEL_TEXT else "gemini-1.5-flash"
     )
 
-    try:
-        response = client.models.generate_content(
-            model=model_name,
-            contents=[
-                types.Part.from_bytes(data=image_bytes, mime_type=gemini_mime_type),
-                prompt,
-            ],
-            config=types.GenerateContentConfig(
-                temperature=0.0,  # Deterministic OCR
-            ),
-        )
-        return response.text.strip()
-    except Exception as e:
-        error_msg = str(e)
-        print(
-            f"Warning: OCR failed ({error_msg}). Using fallback dummy text for demo continuity."
-        )
-        return "DUMMY OCR TEXT: Acme Corp. Certificate of Incorporation. U12345MH2024PTC123456. 123 Fake Street, Industrial Estate, Mumbai."
+    response = client.models.generate_content(
+        model=model_name,
+        contents=[
+            types.Part.from_bytes(data=image_bytes, mime_type=gemini_mime_type),
+            prompt,
+        ],
+        config=types.GenerateContentConfig(
+            temperature=0.0,  # Deterministic OCR
+        ),
+    )
+
+    return response.text.strip()

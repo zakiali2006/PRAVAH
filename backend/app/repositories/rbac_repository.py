@@ -37,8 +37,8 @@ class RBACRepository:
     ) -> bool:
         if not user.role:
             return False
-        # SYSTEM_ADMIN role inherently has all permissions
-        if user.role == "SYSTEM_ADMIN":
+        # POLICY_ADMIN role inherently has all permissions
+        if user.role == "POLICY_ADMIN":
             return True
 
         user_perms = self.get_user_permissions(db, user)

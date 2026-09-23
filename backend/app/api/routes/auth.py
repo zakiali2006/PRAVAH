@@ -81,6 +81,16 @@ def login(user_in: UserLogin, db: Session = Depends(get_db)):
             message="Inactive user",
         )
 
+    # Portal isolation check
+    if user_in.portal_type:
+        expected_role = user_in.portal_type.upper()
+        if user.role != expected_role:
+            raise AppException(
+                status_code=403,
+                error_code="PORTAL_ACCESS_DENIED",
+                message=f"Access denied: Your account cannot access the {user_in.portal_type} portal.",
+            )
+
     access_token = create_access_token(subject=user.id)
     raw_refresh = create_refresh_token()
 
@@ -291,7 +301,7 @@ from app.api.deps import RoleChecker
 
 @router.get("/admin-only")
 def admin_only_example(
-    current_user=Depends(RoleChecker(["SYSTEM_ADMIN", "POLICY_ADMIN"]))
+    current_user=Depends(RoleChecker(["POLICY_ADMIN"]))
 ):
     """
     Example endpoint demonstrating how to restrict access to specific roles.
