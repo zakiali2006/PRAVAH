@@ -51,8 +51,8 @@ api_router.include_router(audit.router, prefix="/audit", tags=["Audit System"])
 #     dashboard.router, prefix="/dashboard", tags=["Dashboard"]
 # )
 
-# from app.api.routes import chat
-# api_router.include_router(chat.router, prefix="/chat", tags=["Chat"])
+from app.api.routes import chat
+api_router.include_router(chat.router, prefix="/chat", tags=["Chat"])
 
 from app.api.routes import documents
 
