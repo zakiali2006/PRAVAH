@@ -27,6 +27,7 @@ class Service(Base, BaseMixin):
     __tablename__ = "services"
 
     name = Column(String, unique=True, nullable=False, index=True)
+    code = Column(String, unique=True, nullable=True, index=True)
     description = Column(String, nullable=True)
     department_id = Column(
         Integer, ForeignKey("departments.id"), nullable=False, index=True

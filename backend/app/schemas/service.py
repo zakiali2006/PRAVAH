@@ -23,6 +23,7 @@ class DepartmentOut(BaseModel):
 
 class ServiceBase(BaseModel):
     name: str
+    code: Optional[str] = None
     description: Optional[str] = None
     department_id: int
     sector: Optional[str] = None
