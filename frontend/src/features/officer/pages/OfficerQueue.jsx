@@ -1,14 +1,16 @@
 import React, { useState } from "react";
-import { Loader2, CheckCircle, Clock, AlertTriangle, ChevronRight, Filter, ShieldCheck, X } from "lucide-react";
+import { Loader2, CheckCircle, Clock, AlertTriangle, ChevronRight, Filter, ShieldCheck, X, ShieldAlert, Sparkles, RefreshCw } from "lucide-react";
 import { SectionHead } from "../../../components/common/SectionHead";
 import { Btn } from "../../../components/common/Btn";
 import { useApplications } from "../../../hooks/useApplications";
+import { recalculateApplicationRisk } from "../../../api/client";
 
 export function OfficerQueue() {
-  const { applications: queue, loading, updateStatus } = useApplications(true);
+  const { applications: queue, loading, updateStatus, refresh } = useApplications(true);
   const [selectedApp, setSelectedApp] = useState(null);
   const [processingState, setProcessingState] = useState(false);
   const [actionRemarks, setActionRemarks] = useState("");
+  const [recalculatingRisk, setRecalculatingRisk] = useState(false);
 
   const getStatusBadge = (status) => {
     const s = status ? status.toLowerCase() : 'unknown';
@@ -20,6 +22,38 @@ export function OfficerQueue() {
     return <span className="uppercase text-[10px] font-black tracking-wider px-2 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-600">{s}</span>;
   };
 
+  const getTriageBadge = (app) => {
+    const risk = app.risk_score;
+    const cat = risk?.triage_category || (app.ai_score > 65 ? 'HIGH_RISK_REVIEW' : app.ai_score > 30 ? 'DOCUMENT_REVIEW' : 'FAST_TRACK');
+    
+    if (cat === 'FAST_TRACK') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+          <CheckCircle size={11} /> Fast Track
+        </span>
+      );
+    }
+    if (cat === 'DOCUMENT_REVIEW') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+          <AlertTriangle size={11} /> Doc Review
+        </span>
+      );
+    }
+    if (cat === 'HIGH_RISK_REVIEW') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800 border border-red-200">
+          <AlertTriangle size={11} /> High Risk
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+        Standard
+      </span>
+    );
+  };
+
   const handleProcessClick = (app) => {
     setSelectedApp(app);
     setActionRemarks("");
@@ -27,6 +61,25 @@ export function OfficerQueue() {
 
   const handleCloseModal = () => {
     setSelectedApp(null);
+  };
+
+  const handleRecalculateRisk = async () => {
+    if (!selectedApp) return;
+    setRecalculatingRisk(true);
+    try {
+      const updatedRisk = await recalculateApplicationRisk(selectedApp.id);
+      setSelectedApp(prev => ({
+        ...prev,
+        ai_score: updatedRisk.score,
+        risk_score: updatedRisk,
+      }));
+      if (refresh) refresh();
+    } catch (err) {
+      console.error("Failed to recalculate risk", err);
+      alert("Failed to recalculate risk. Please try again.");
+    } finally {
+      setRecalculatingRisk(false);
+    }
   };
 
   const submitAction = async (status) => {
@@ -63,8 +116,8 @@ export function OfficerQueue() {
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase tracking-wider text-xs">
                 <th className="p-4 font-bold">App ID</th>
                 <th className="p-4 font-bold">Service & Applicant</th>
-                <th className="p-4 font-bold">Priority Score</th>
-                <th className="p-4 font-bold">SLA Risk</th>
+                <th className="p-4 font-bold">Risk Score</th>
+                <th className="p-4 font-bold">Smart Triage</th>
                 <th className="p-4 font-bold">Status</th>
                 <th className="p-4 font-bold text-right">Action</th>
               </tr>
@@ -99,23 +152,23 @@ export function OfficerQueue() {
                       <div className="flex items-center gap-2">
                         <div className="w-full bg-slate-200 rounded-full h-2 max-w-[80px]">
                           <div 
-                            className={`h-2 rounded-full ${item.ai_score > 3 ? 'bg-red-500' : item.ai_score > 2 ? 'bg-amber-500' : 'bg-emerald-500'}`} 
-                            style={{ width: `${((item.ai_score || 0) / 5) * 100}%` }}
+                            className={`h-2 rounded-full ${
+                              (item.risk_score?.risk_level === 'HIGH' || item.ai_score > 65) 
+                                ? 'bg-red-500' 
+                                : (item.risk_score?.risk_level === 'MEDIUM' || item.ai_score > 30) 
+                                ? 'bg-amber-500' 
+                                : 'bg-emerald-500'
+                            }`} 
+                            style={{ width: `${Math.min(100, Math.max(0, item.ai_score || 0))}%` }}
                           ></div>
                         </div>
-                        <span className="font-bold text-slate-700">{item.ai_score ? item.ai_score.toFixed(1) : '0.0'}</span>
+                        <span className="font-bold text-xs text-slate-700">
+                          {Math.round(item.ai_score || 0)}/100
+                        </span>
                       </div>
                     </td>
                     <td className="p-4">
-                      {item.ai_score > 3 ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">
-                          <AlertTriangle size={12} /> High
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-700">
-                          <CheckCircle size={12} /> Normal
-                        </span>
-                      )}
+                      {getTriageBadge(item)}
                     </td>
                     <td className="p-4">
                       {getStatusBadge(item.status)}
@@ -178,6 +231,70 @@ export function OfficerQueue() {
                       </div>
                     )}
 
+                    {/* Explainable AI Risk Assessment & Smart Triage Card */}
+                    <div className="mt-6 p-4 rounded-xl border border-slate-200 bg-slate-50/80">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <ShieldAlert className={
+                            (selectedApp.risk_score?.risk_level === 'HIGH' || selectedApp.ai_score > 65)
+                              ? "text-red-600"
+                              : (selectedApp.risk_score?.risk_level === 'MEDIUM' || selectedApp.ai_score > 30)
+                              ? "text-amber-600"
+                              : "text-emerald-600"
+                          } size={18} />
+                          <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">
+                            AI Risk Triage Analysis
+                          </h4>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={handleRecalculateRisk}
+                            disabled={recalculatingRisk}
+                            title="Recalculate Risk Score"
+                            className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-blue-600 bg-white border border-slate-200 rounded-md transition-colors"
+                          >
+                            <RefreshCw size={11} className={recalculatingRisk ? "animate-spin text-blue-600" : ""} />
+                            {recalculatingRisk ? "Calculating..." : "Recalculate"}
+                          </button>
+                          <span className={`px-2 py-0.5 rounded text-xs font-black uppercase ${
+                            (selectedApp.risk_score?.risk_level === 'HIGH' || selectedApp.ai_score > 65)
+                              ? "bg-red-100 text-red-700 border border-red-200"
+                              : (selectedApp.risk_score?.risk_level === 'MEDIUM' || selectedApp.ai_score > 30)
+                              ? "bg-amber-100 text-amber-700 border border-amber-200"
+                              : "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                          }`}>
+                            {selectedApp.risk_score?.risk_level || (selectedApp.ai_score > 65 ? "HIGH" : selectedApp.ai_score > 30 ? "MEDIUM" : "LOW")} RISK ({Math.round(selectedApp.ai_score || 0)}/100)
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Summary */}
+                      <p className="text-xs text-slate-600 leading-relaxed font-medium bg-white p-2.5 rounded-lg border border-slate-200/80 mb-3">
+                        {selectedApp.risk_score?.summary || `Application evaluated with priority score of ${Math.round(selectedApp.ai_score || 0)}/100.`}
+                      </p>
+
+                      {/* Factors list */}
+                      {selectedApp.risk_score?.factors && selectedApp.risk_score.factors.length > 0 ? (
+                        <div className="space-y-1.5">
+                          <div className="text-[10px] font-black uppercase text-slate-400">Identified Risk Factors</div>
+                          {selectedApp.risk_score.factors.map((f, fIdx) => (
+                            <div key={fIdx} className="flex items-start justify-between gap-2 p-2 bg-white rounded-md border border-slate-100 text-xs">
+                              <div>
+                                <span className="font-bold text-slate-800">{f.factor}:</span>{" "}
+                                <span className="text-slate-600">{f.reason}</span>
+                              </div>
+                              <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-black bg-red-50 text-red-600 border border-red-100">
+                                +{f.impact} pts
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-100">
+                          <CheckCircle size={14} /> Zero high-risk compliance discrepancies detected across submitted documents.
+                        </div>
+                      )}
+                    </div>
 
               <div className="mt-8">
                 <h4 className="text-sm font-bold text-slate-800 mb-3">Officer Remarks</h4>

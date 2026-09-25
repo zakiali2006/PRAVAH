@@ -244,6 +244,16 @@ def validate_document(
         db.commit()
         db.refresh(doc)
 
+        # Trigger risk score recalculation for affected applications
+        try:
+            from app.models.application import Application
+            from app.services.risk_scoring_service import risk_scoring_service
+            user_apps = db.query(Application).filter(Application.user_id == doc.uploader_id).all()
+            for u_app in user_apps:
+                risk_scoring_service.calculate_risk(db, u_app.id, persist=True)
+        except Exception:
+            pass
+
         data = {
             "document_id": doc.id,
             "status": validation_result.status.value,
