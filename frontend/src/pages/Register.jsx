@@ -85,6 +85,7 @@ export function Register() {
               style={inputStyle} 
               value={password}
               onChange={e => setPassword(e.target.value)}
+              autoComplete="new-password"
             />
           </div>
           <Btn className="w-full mt-4" disabled={loading}>

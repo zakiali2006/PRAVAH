@@ -2,22 +2,35 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SectionHead } from '../../../components/common/SectionHead';
 import { C } from '../../../constants/theme';
-import { Building2, Plus, Factory } from 'lucide-react';
+import { Building2, Plus, Factory, Loader } from 'lucide-react';
 import { Btn } from '../../../components/common/Btn';
-import { useMockApp } from '../../../contexts/MockAppContext';
+import { useBusinessProfile } from '../../../hooks/useBusinessProfile';
 import { EditProfileModal } from '../components/EditProfileModal';
 import { useAuth } from '../../../contexts/AuthContext';
 
 export function MyBusiness() {
   const navigate = useNavigate();
-  const { users, updateBusinessProfile, factoryUnits } = useMockApp();
+  const { profile, loading, update, create } = useBusinessProfile();
   const { currentUser } = useAuth();
   
-  // For demo, we assume the user is 'user_1'
-  const userId = 'user_1';
-  const profile = users[userId];
-  
   const [showEditModal, setShowEditModal] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader className="animate-spin text-blue-600" size={32} />
+      </div>
+    );
+  }
+
+  const handleSave = async (profileData) => {
+    if (profile) {
+      await update(profileData);
+    } else {
+      await create(profileData);
+    }
+    setShowEditModal(false);
+  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -32,26 +45,26 @@ export function MyBusiness() {
           <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-5 text-blue-600">
             <Building2 size={24} />
           </div>
-          <h3 className="text-xl font-bold mb-1 text-slate-900">{profile?.name || 'Primary Entity'}</h3>
-          <p className="text-sm font-medium text-slate-500 mb-6">{profile?.industry}</p>
+          <h3 className="text-xl font-bold mb-1 text-slate-900">{profile?.company_name || 'Setup your profile'}</h3>
+          <p className="text-sm font-medium text-slate-500 mb-6">{profile?.industry_sector || 'No industry specified'}</p>
           
           <div className="space-y-3 mb-8 flex-1">
             <div className="flex justify-between items-center pb-2 border-b border-slate-50">
               <span className="text-xs text-slate-400 font-bold">PAN NUMBER</span>
-              <span className="text-sm font-mono font-bold text-slate-800">{profile?.panNumber}</span>
+              <span className="text-sm font-mono font-bold text-slate-800">{profile?.pan_number || 'N/A'}</span>
             </div>
             <div className="flex justify-between items-center pb-2 border-b border-slate-50">
-              <span className="text-xs text-slate-400 font-bold">GSTIN</span>
-              <span className="text-sm font-mono font-bold text-slate-800">{profile?.gstin}</span>
+              <span className="text-xs text-slate-400 font-bold">CIN NUMBER</span>
+              <span className="text-sm font-mono font-bold text-slate-800">{profile?.cin_number || 'N/A'}</span>
             </div>
             <div className="flex justify-between items-center pb-2 border-b border-slate-50">
-              <span className="text-xs text-slate-400 font-bold">TOTAL INVESTMENT</span>
-              <span className="text-sm font-bold text-slate-800">{profile?.investment}</span>
+              <span className="text-xs text-slate-400 font-bold">REG. TYPE</span>
+              <span className="text-sm font-bold text-slate-800">{profile?.registration_type || 'N/A'}</span>
             </div>
           </div>
 
           <Btn variant="outline" className="w-full mt-auto" onClick={() => setShowEditModal(true)}>
-            Edit Profile
+            {profile ? 'Edit Profile' : 'Create Profile'}
           </Btn>
         </div>
 
@@ -59,8 +72,8 @@ export function MyBusiness() {
           <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center mb-5 text-orange-600">
             <Factory size={24} />
           </div>
-          <h3 className="text-xl font-bold mb-1 text-slate-900">Factory Units ({factoryUnits.length})</h3>
-          <p className="text-sm text-gray-500 mb-6">You have {factoryUnits.length} registered facilities. Register a new factory or plot to begin applying for site-specific clearances.</p>
+          <h3 className="text-xl font-bold mb-1 text-slate-900">Factory Units</h3>
+          <p className="text-sm text-gray-500 mb-6">Register a new factory or plot to begin applying for site-specific clearances.</p>
           
           <div className="mt-auto space-y-3">
             <Btn className="w-full flex items-center justify-center gap-2" onClick={() => navigate('/factory')}>
@@ -74,7 +87,7 @@ export function MyBusiness() {
         <EditProfileModal 
           profile={profile} 
           onClose={() => setShowEditModal(false)} 
-          onSave={updateBusinessProfile} 
+          onSave={handleSave} 
         />
       )}
     </div>

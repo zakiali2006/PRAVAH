@@ -9,6 +9,8 @@ class Application(Base):
 
     id = Column(String, primary_key=True, index=True)  # e.g. MTR/2026/001
     user_id = Column(Integer, ForeignKey("users.id"))
+    business_id = Column(Integer, ForeignKey("business_profiles.id"), nullable=True)
+    assigned_officer_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     service_name = Column(String, nullable=False)
     applicant_name = Column(String, nullable=False)
     status = Column(String, default="draft")  # draft, pending, approved, rejected
@@ -21,4 +23,4 @@ class Application(Base):
     submitted_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    stages = relationship("Stage", back_populates="application", cascade="all, delete")
+    stages = relationship("Stage", back_populates="application", cascade="all, delete", order_by="Stage.id")

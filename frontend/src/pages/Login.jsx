@@ -28,7 +28,7 @@ export function Login() {
     const config = roleConfigs.find(r => r.id === activeRole);
     if (config) {
       setEmail(config.email);
-      setPassword('password123');
+      setPassword('PravahTest!2026');
       setError('');
     }
   }, [activeRole]);
@@ -89,7 +89,7 @@ export function Login() {
 
         {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">{error}</div>}
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
           <div>
             <label className="block text-sm font-medium mb-1">Email Address</label>
             <input
@@ -110,6 +110,7 @@ export function Login() {
               style={inputStyle}
               value={password}
               onChange={e => setPassword(e.target.value)}
+              autoComplete="new-password"
             />
           </div>
           <Btn className="w-full mt-4" disabled={loading}>

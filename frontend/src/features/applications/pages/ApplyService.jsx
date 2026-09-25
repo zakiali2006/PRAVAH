@@ -6,12 +6,14 @@ import { InlineDocumentUpload } from '../components/InlineDocumentUpload';
 import { Btn } from '../../../components/common/Btn';
 import { C, inputCls, inputStyle } from '../../../constants/theme';
 import { Check, ChevronRight, Loader2, Bot, Sparkles } from 'lucide-react';
+import { useApplications } from '../../../hooks/useApplications';
 
 const STEPS = ["Initiation", "Form Data", "Documents", "Payment"];
 
 export function ApplyService() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const { create } = useApplications();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
@@ -49,10 +51,20 @@ export function ApplyService() {
 
   const handleSubmit = async () => {
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSaving(false);
-    alert("Application Submitted Successfully!");
-    navigate('/dashboard');
+    try {
+      await create({
+        service_name: formData.appType,
+        applicant_name: formData.businessName || currentUser.name,
+        // Let backend handle business_id or leave null for now to prevent FK error
+        status: 'draft' 
+      });
+      alert("Application Submitted Successfully!");
+      navigate('/app/applications');
+    } catch (error) {
+      alert("Failed to submit application");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePrefill = async () => {

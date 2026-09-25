@@ -41,6 +41,7 @@ import { InvestorDashboard } from "../features/dashboard/pages/InvestorDashboard
 import { MyBusiness } from "../features/business/pages/MyBusiness";
 import { DocumentDrive } from "../features/documents/pages/DocumentDrive";
 import { OfficerDashboard } from "../features/officer/pages/OfficerDashboard";
+import { OfficerQueue } from "../features/officer/pages/OfficerQueue";
 import { FactoryUnits } from "../features/business/pages/FactoryUnits";
 import { InvestorWizard } from "../features/applications/pages/InvestorWizard";
 import { PaymentsHistory } from "../features/dashboard/pages/PaymentsHistory";
@@ -131,7 +132,7 @@ function AppRoutes() {
             }>
               <Route path="dashboard" element={<OfficerDashboard />} />
               <Route path="fraud" element={<FraudRadar alerts={INITIAL_FRAUD_ALERTS} />} />
-              <Route path="queue" element={<UnderConstruction title="Application Queue" />} />
+              <Route path="queue" element={<OfficerQueue />} />
               <Route path="documents" element={<UnderConstruction title="Document Review" />} />
               <Route path="duplicates" element={<UnderConstruction title="Duplicate Alerts" />} />
               <Route path="grievances" element={<UnderConstruction title="Grievances" />} />

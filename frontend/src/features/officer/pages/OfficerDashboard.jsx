@@ -1,22 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Loader2, AlertTriangle, CheckCircle2, XCircle, Clock, ShieldAlert, Cpu } from "lucide-react";
 import { SectionHead } from "../../../components/common/SectionHead";
 import { Btn } from "../../../components/common/Btn";
+import { useApplications } from "../../../hooks/useApplications";
 
 export function OfficerDashboard() {
   const [activeTab, setActiveTab] = useState("workload");
-  const [queue, setQueue] = useState([]);
-
-  useEffect(() => {
-    const fetchQueue = async () => {
-      // Simulate network request
-      await new Promise(r => setTimeout(r, 800));
-      setQueue([
-        { id: "MTR/2026/001", service_name: "Fire NOC", applicant_name: "Sahyadri Precision", urgency: "critical", ai_score: 4.8, status: "pending" }
-      ]);
-    };
-    fetchQueue();
-  }, []);
+  const { applications: queue, loading: queueLoading, updateStatus } = useApplications(true);
 
   const MOCK_FRAUD = [
     { id: "MTR/2026/112", applicant: "Unknown Shell Corp", issue: "Duplicate PAN Card detected across 3 distinct entities", confidence: 99.8 },
@@ -53,50 +43,58 @@ export function OfficerDashboard() {
           </div>
 
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-medium">
-                <tr>
-                  <th className="px-6 py-4">Application</th>
-                  <th className="px-6 py-4">AI Priority Score</th>
-                  <th className="px-6 py-4">SLA Status</th>
-                  <th className="px-6 py-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {queue.map((item, i) => (
-                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-gray-900">{item.id}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">{item.service_name} · {item.applicant_name}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-full bg-gray-200 rounded-full h-2 max-w-[100px]">
-                          <div className={`h-2 rounded-full ${item.ai_score > 3 ? 'bg-red-500' : item.ai_score > 2 ? 'bg-orange-500' : 'bg-blue-500'}`} style={{ width: `${(item.ai_score / 5) * 100}%` }}></div>
-                        </div>
-                        <span className="font-semibold text-gray-700">{item.ai_score}/5</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {item.urgency === 'critical' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
-                          <AlertTriangle size={14} /> Breach Risk
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                          <Clock size={14} /> On Track
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <Btn variant={i === 0 ? "navy" : "outline"} className={i===0 ? "bg-red-600 hover:bg-red-700 border-transparent text-white" : ""}>
-                        Process
-                      </Btn>
-                    </td>
+            {queueLoading ? (
+              <div className="p-8 text-center text-slate-500 flex justify-center items-center gap-2">
+                <Loader2 className="animate-spin" /> Loading queue...
+              </div>
+            ) : queue.length === 0 ? (
+              <div className="p-8 text-center text-slate-500">No applications pending for review.</div>
+            ) : (
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-medium">
+                  <tr>
+                    <th className="px-6 py-4">Application</th>
+                    <th className="px-6 py-4">AI Priority Score</th>
+                    <th className="px-6 py-4">SLA Status</th>
+                    <th className="px-6 py-4 text-right">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {queue.map((item, i) => (
+                    <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-gray-900">{item.id}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{item.service_id} · {item.business_id}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-full bg-gray-200 rounded-full h-2 max-w-[100px]">
+                            <div className={`h-2 rounded-full ${item.ai_score > 3 ? 'bg-red-500' : item.ai_score > 2 ? 'bg-orange-500' : 'bg-blue-500'}`} style={{ width: `${((item.ai_score || 0) / 5) * 100}%` }}></div>
+                          </div>
+                          <span className="font-semibold text-gray-700">{item.ai_score ? item.ai_score.toFixed(1) : 'N/A'}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {item.ai_score > 3 ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                            <AlertTriangle size={14} /> Breach Risk
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                            <Clock size={14} /> On Track
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Btn variant={i === 0 ? "navy" : "outline"} className={i===0 ? "bg-red-600 hover:bg-red-700 border-transparent text-white" : ""} onClick={() => updateStatus(item.id, 'approved', 'Looks good')}>
+                          Process
+                        </Btn>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}

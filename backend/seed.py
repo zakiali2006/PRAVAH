@@ -19,7 +19,7 @@ def seed_database():
 
         print("Seeding Demo Users...")
         from app.core.security import get_password_hash
-        default_pwd = get_password_hash("password123")
+        default_pwd = get_password_hash("PravahTest!2026")
         
         cur.execute("""
             INSERT INTO users (id, email, hashed_password, role, is_active) 
