@@ -18,3 +18,4 @@ class GrievanceCreate(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
+    application_id: Optional[str] = None
