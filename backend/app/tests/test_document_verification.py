@@ -134,3 +134,16 @@ def test_missing_signatures_warning(sample_business_profile):
     result = validate_document_data(extracted, sample_business_profile)
     assert result.status == ValidationStatus.WARNING
     assert any(m.field == "signatures" for m in result.mismatches)
+
+
+def test_wrong_cin_mismatch(sample_business_profile):
+    extracted = DocumentExtractionResult(
+        document_type="INCORPORATION_CERTIFICATE",
+        business_name="Sahyadri Precision Private Limited",
+        pan_number="AAACS1234F",
+        cin_number="L12345DL1999GOI000111",
+        document_number="L12345DL1999GOI000111",
+    )
+    result = validate_document_data(extracted, sample_business_profile)
+    assert result.status == ValidationStatus.INVALID
+    assert any(m.field == "cin_number" for m in result.mismatches)
