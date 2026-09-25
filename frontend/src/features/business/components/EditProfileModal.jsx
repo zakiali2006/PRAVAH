@@ -4,26 +4,26 @@ import { X, Loader2 } from 'lucide-react';
 export function EditProfileModal({ profile, onClose, onSave }) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: profile?.name || '',
-    panNumber: profile?.panNumber || '',
-    gstin: profile?.gstin || '',
-    industry: profile?.industry || '',
-    investment: profile?.investment || ''
+    company_name: profile?.company_name || '',
+    pan_number: profile?.pan_number || '',
+    cin_number: profile?.cin_number || '',
+    industry_sector: profile?.industry_sector || '',
+    registration_type: profile?.registration_type || 'Private Limited',
+    address: profile?.address || ''
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await onSave(profile.id, formData);
+    await onSave(formData);
     setLoading(false);
-    onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white max-w-lg w-full rounded-2xl p-6 shadow-2xl border border-slate-200">
         <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
-          <h3 className="font-extrabold text-lg text-slate-900">Edit Primary Entity Profile</h3>
+          <h3 className="font-extrabold text-lg text-slate-900">{profile ? 'Edit Business Profile' : 'Create Business Profile'}</h3>
           <button onClick={onClose} disabled={loading} className="text-slate-400 hover:text-slate-600 disabled:opacity-50">
             <X size={20} />
           </button>
@@ -34,8 +34,8 @@ export function EditProfileModal({ profile, onClose, onSave }) {
             <label className="block text-sm font-bold text-slate-700 mb-1">Company Name</label>
             <input
               type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              value={formData.company_name}
+              onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
               className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-semibold"
               required
               disabled={loading}
@@ -47,46 +47,61 @@ export function EditProfileModal({ profile, onClose, onSave }) {
               <label className="block text-sm font-bold text-slate-700 mb-1">PAN Number</label>
               <input
                 type="text"
-                value={formData.panNumber}
-                onChange={(e) => setFormData({ ...formData, panNumber: e.target.value })}
+                value={formData.pan_number}
+                onChange={(e) => setFormData({ ...formData, pan_number: e.target.value })}
                 className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase font-mono"
                 required
                 disabled={loading}
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">GSTIN</label>
+              <label className="block text-sm font-bold text-slate-700 mb-1">CIN Number</label>
               <input
                 type="text"
-                value={formData.gstin}
-                onChange={(e) => setFormData({ ...formData, gstin: e.target.value })}
+                value={formData.cin_number}
+                onChange={(e) => setFormData({ ...formData, cin_number: e.target.value })}
                 className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase font-mono"
-                required
                 disabled={loading}
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">Industry Sector</label>
-            <input
-              type="text"
-              value={formData.industry}
-              onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-              className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium"
-              required
-              disabled={loading}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Industry Sector</label>
+              <input
+                type="text"
+                value={formData.industry_sector}
+                onChange={(e) => setFormData({ ...formData, industry_sector: e.target.value })}
+                className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+                required
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Registration Type</label>
+              <select
+                value={formData.registration_type}
+                onChange={(e) => setFormData({ ...formData, registration_type: e.target.value })}
+                className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium bg-white"
+                disabled={loading}
+              >
+                <option value="Private Limited">Private Limited</option>
+                <option value="Public Limited">Public Limited</option>
+                <option value="LLP">LLP</option>
+                <option value="Proprietorship">Proprietorship</option>
+                <option value="Partnership">Partnership</option>
+              </select>
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">Total Investment</label>
-            <input
-              type="text"
-              value={formData.investment}
-              onChange={(e) => setFormData({ ...formData, investment: e.target.value })}
-              placeholder="e.g. ₹ 450 Crores"
+            <label className="block text-sm font-bold text-slate-700 mb-1">Registered Address</label>
+            <textarea
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+              rows={2}
               disabled={loading}
             />
           </div>

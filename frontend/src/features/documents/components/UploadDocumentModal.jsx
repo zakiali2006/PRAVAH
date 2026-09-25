@@ -218,9 +218,9 @@ export function UploadDocumentModal({ onClose, onUpload }) {
                   {validationData.extracted_data && Object.keys(validationData.extracted_data).length > 0 && (
                      <div className={`bg-white rounded border p-2 text-[10px] grid grid-cols-2 gap-2 mt-2 ${validationData.status === 'VALID' ? 'border-emerald-100' : 'border-orange-100'}`}>
                        {Object.entries(validationData.extracted_data).slice(0, 4).map(([key, value]) => (
-                         <div key={key}>
+                         <div key={key} className="overflow-hidden">
                             <span className="block text-slate-400 font-semibold truncate capitalize">{key.replace(/_/g, ' ')}</span>
-                            <span className="font-bold text-slate-800 text-xs truncate">{typeof value === 'object' ? '...' : String(value)}</span>
+                            <span className="block font-bold text-slate-800 text-xs truncate">{typeof value === 'object' ? '...' : String(value)}</span>
                          </div>
                        ))}
                      </div>

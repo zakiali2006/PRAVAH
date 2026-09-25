@@ -1,34 +1,37 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.models.application import Application
-from app.api.routes.auth import get_current_user
 from app.models.user import User
+from app.api.deps import get_current_user, RoleChecker
+from app.schemas.application import ApplicationStatusUpdate, ApplicationResponse
+from app.services.application_service import ApplicationService
+from app.repositories.application_repo import application_repo
+from typing import List
 
 router = APIRouter()
+allow_officers = RoleChecker(["OFFICER", "SYSTEM_ADMIN"])
 
 
-@router.get("/queue")
+@router.get("/queue", response_model=List[ApplicationResponse])
 def get_officer_queue(
-    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _: bool = Depends(allow_officers),
 ):
-    # Sort by AI score descending (highest risk first), then urgency
-    applications = (
-        db.query(Application)
-        .filter(Application.status != "approved")
-        .order_by(Application.ai_score.desc())
-        .all()
-    )
+    # Get applications assigned to this officer
+    return application_repo.get_pending_for_officer(db, current_user.id)
 
-    return [
-        {
-            "id": app.id,
-            "service_name": app.service_name,
-            "applicant_name": app.applicant_name,
-            "status": app.status,
-            "urgency": app.urgency,
-            "ai_score": app.ai_score,
-            "submitted_at": app.submitted_at,
-        }
-        for app in applications
-    ]
+
+@router.post(
+    "/applications/{application_id:path}/status", response_model=ApplicationResponse
+)
+def update_application_status(
+    application_id: str,
+    status_update: ApplicationStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _: bool = Depends(allow_officers),
+):
+    return ApplicationService.update_status(
+        db, application_id, status_update, current_user.id
+    )

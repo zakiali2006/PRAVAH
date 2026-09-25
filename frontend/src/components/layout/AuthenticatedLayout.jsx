@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { Landmark, Menu, X, ChevronDown, ChevronRight, Search, LogOut, Bell, User } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "../../contexts/TranslationContext";
@@ -79,24 +80,33 @@ export function AuthenticatedLayout({ a11y, setA11y }) {
                     <ChevronRight size={14} className={`transition-transform ${isOpen ? "rotate-90" : ""}`} />
                   </button>
                   
-                  {isOpen && (
-                    <div className="mt-1 ml-2 pl-2 border-l border-slate-800 space-y-1">
-                      {item.subLinks.map(sub => {
-                        const isSubActive = currentPath === sub.path;
-                        return (
-                          <button
-                            key={sub.path}
-                            onClick={() => go(sub.path)}
-                            className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
-                              isSubActive ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                            }`}
-                          >
-                            {sub.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                  <AnimatePresence>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-1 ml-2 pl-2 border-l border-slate-800 space-y-1 py-1">
+                          {item.subLinks.map(sub => {
+                            const isSubActive = currentPath === sub.path;
+                            return (
+                              <button
+                                key={sub.path}
+                                onClick={() => go(sub.path)}
+                                className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
+                                  isSubActive ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                }`}
+                              >
+                                {sub.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               );
             }
@@ -184,8 +194,19 @@ export function AuthenticatedLayout({ a11y, setA11y }) {
         </header>
 
         {/* PAGE CONTENT */}
-        <main className="flex-1 overflow-y-auto relative bg-slate-50">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto relative bg-slate-50 flex flex-col">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 flex flex-col"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 
@@ -224,24 +245,33 @@ export function AuthenticatedLayout({ a11y, setA11y }) {
                         <ChevronRight size={14} className={`transition-transform ${isOpen ? "rotate-90" : ""}`} />
                       </button>
                       
-                      {isOpen && (
-                        <div className="mt-1 ml-2 pl-2 border-l border-slate-800 space-y-1">
-                          {item.subLinks.map(sub => {
-                            const isSubActive = currentPath === sub.path;
-                            return (
-                              <button
-                                key={sub.path}
-                                onClick={() => go(sub.path)}
-                                className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
-                                  isSubActive ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:text-white"
-                                }`}
-                              >
-                                {sub.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
+                      <AnimatePresence>
+                        {isOpen && (
+                          <motion.div 
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="mt-1 ml-2 pl-2 border-l border-slate-800 space-y-1 py-1">
+                              {item.subLinks.map(sub => {
+                                const isSubActive = currentPath === sub.path;
+                                return (
+                                  <button
+                                    key={sub.path}
+                                    onClick={() => go(sub.path)}
+                                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
+                                      isSubActive ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:text-white"
+                                    }`}
+                                  >
+                                    {sub.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   );
                 }

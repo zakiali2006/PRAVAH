@@ -95,7 +95,7 @@ export function Header({ a11y, setA11y }) {
                 <div className="text-sm font-semibold mr-2" style={{ color: C.navyDeep }}>
                   {currentUser.email}
                 </div>
-                <Btn variant="ghost" onClick={() => go("dashboard")} className="is-link">{t.nav.dashboard}</Btn>
+                <Btn variant="ghost" onClick={() => go(currentUser.role === 'INVESTOR' ? 'app/dashboard' : currentUser.role === 'OFFICER' ? 'officer/dashboard' : 'policy/dashboard')} className="is-link">{t.nav.dashboard}</Btn>
                 <Btn onClick={handleSignOut} className="is-link">Sign Out</Btn>
               </>
             ) : (
@@ -201,7 +201,7 @@ export function Header({ a11y, setA11y }) {
                 <div className="text-sm font-semibold mb-2" style={{ color: C.saffronLight }}>
                   {currentUser.email}
                 </div>
-                <Btn variant="ghost" onClick={() => go("dashboard")} className="w-full">{t.nav.dashboard}</Btn>
+                <Btn variant="ghost" onClick={() => go(currentUser.role === 'INVESTOR' ? 'app/dashboard' : currentUser.role === 'OFFICER' ? 'officer/dashboard' : 'policy/dashboard')} className="w-full">{t.nav.dashboard}</Btn>
                 <Btn onClick={handleSignOut} className="w-full">Sign Out</Btn>
               </>
             ) : (
