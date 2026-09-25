@@ -48,9 +48,11 @@ def generate_embeddings(texts: List[str]) -> List[List[float]]:
             response = client.models.embed_content(
                 model=EMBEDDING_MODEL,
                 contents=text_chunk,
-                config=genai.types.EmbedContentConfig(output_dimensionality=EMBEDDING_DIMENSION)
+                config=genai.types.EmbedContentConfig(
+                    output_dimensionality=EMBEDDING_DIMENSION
+                ),
             )
-            
+
             if hasattr(response, "embeddings") and response.embeddings:
                 values = list(response.embeddings[0].values)
                 if len(values) != EMBEDDING_DIMENSION:
@@ -63,7 +65,9 @@ def generate_embeddings(texts: List[str]) -> List[List[float]]:
             elif hasattr(response, "embedding") and response.embedding:
                 embeddings.append(list(response.embedding.values))
             else:
-                raise EmbeddingError("Gemini API returned an empty or unrecognized embedding response.")
+                raise EmbeddingError(
+                    "Gemini API returned an empty or unrecognized embedding response."
+                )
 
         return embeddings
 

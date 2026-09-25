@@ -23,4 +23,9 @@ class Application(Base):
     submitted_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    stages = relationship("Stage", back_populates="application", cascade="all, delete", order_by="Stage.id")
+    stages = relationship(
+        "Stage",
+        back_populates="application",
+        cascade="all, delete",
+        order_by="Stage.id",
+    )
