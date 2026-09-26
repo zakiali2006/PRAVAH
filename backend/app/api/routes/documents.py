@@ -182,6 +182,43 @@ def delete_document(
     return success_response(None, "Document deleted successfully")
 
 
+@router.post("/digilocker/sync", response_model=dict)
+def sync_digilocker(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # Mock syncing from DigiLocker by creating 2 verified document records
+    docs_to_create = [
+        Document(
+            filename="aadhaar_mock.pdf",
+            original_name="Aadhaar Card (Masked)",
+            mime_type="application/pdf",
+            size_bytes=460800, # 450 KB
+            file_path="/mock/aadhaar_mock.pdf",
+            status="VALID",
+            validation_status="VALID",
+            document_type_id=1,
+            uploader_id=current_user.id,
+            extracted_data={"verification": {"confidence": 1.0, "matches": ["identity_verified"]}}
+        ),
+        Document(
+            filename="pan_mock.pdf",
+            original_name="PAN Card",
+            mime_type="application/pdf",
+            size_bytes=327680, # 320 KB
+            file_path="/mock/pan_mock.pdf",
+            status="VALID",
+            validation_status="VALID",
+            document_type_id=1,
+            uploader_id=current_user.id,
+            extracted_data={"verification": {"confidence": 1.0, "matches": ["tax_identity_verified"]}}
+        )
+    ]
+    db.add_all(docs_to_create)
+    db.commit()
+    return success_response(None, "DigiLocker synced successfully")
+
+
 @router.post("/{document_id}/validate", response_model=dict)
 def validate_document(
     document_id: int,

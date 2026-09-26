@@ -134,3 +134,8 @@ export const getMyDocuments = async () => {
   const response = await apiClient.get('/documents');
   return response.data;
 };
+
+export const syncDigiLockerAPI = async () => {
+  const response = await apiClient.post('/documents/digilocker/sync');
+  return response.data;
+};

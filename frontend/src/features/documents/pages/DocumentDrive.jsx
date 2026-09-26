@@ -7,29 +7,74 @@ import { useMockApp } from '../../../contexts/MockAppContext';
 import { UploadDocumentModal } from '../components/UploadDocumentModal';
 
 export function DocumentDrive() {
-  const { documents, addDocument } = useMockApp();
+  const { addDocument } = useMockApp(); // Keeping addDocument just in case other parts of the app rely on it, but we won't use it here
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedDocForView, setSelectedDocForView] = useState(null);
   const [isFetchingDigiLocker, setIsFetchingDigiLocker] = useState(false);
   const [digiLockerConnected, setDigiLockerConnected] = useState(false);
 
-  const handleDigiLockerSync = () => {
+  const fetchDocuments = async () => {
+    try {
+      setLoading(true);
+      const { getMyDocuments } = await import('../../../api/client');
+      const res = await getMyDocuments();
+      // Map backend documents to frontend format
+      const formattedDocs = res.data.map(doc => {
+        const verification = doc.extracted_data?.verification || {};
+        const isVerified = doc.validation_status === 'VALID' || doc.status === 'VALID';
+        const isFlagged = doc.validation_status === 'INVALID' || doc.status === 'INVALID';
+        const isWarning = doc.validation_status === 'WARNING' || doc.status === 'WARNING';
+        
+        let finalStatus = 'pending';
+        if (isVerified) finalStatus = 'verified';
+        else if (isFlagged || isWarning) finalStatus = 'ai_flagged';
+
+        const formatSize = (bytes) => {
+          if (!bytes) return '0 KB';
+          if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+          return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+        };
+
+        return {
+          id: `DOC-${doc.id}`,
+          name: doc.original_name || doc.filename,
+          type: doc.mime_type,
+          uploadDate: new Date(doc.created_at || Date.now()).toISOString().split('T')[0],
+          size: formatSize(doc.size_bytes),
+          status: finalStatus,
+          confidence: verification.confidence,
+          matches: verification.matches || [],
+          mismatches: verification.mismatches || [],
+          reasons: verification.reasons || [],
+          extracted_data: doc.extracted_data?.fields || {}
+        };
+      });
+      setDocuments(formattedDocs);
+    } catch (err) {
+      console.error("Failed to fetch documents", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchDocuments();
+  }, []);
+
+  const handleDigiLockerSync = async () => {
     setIsFetchingDigiLocker(true);
-    setTimeout(() => {
-      // Mock fetching from DigiLocker
-      addDocument({
-        name: 'Aadhaar Card (Masked)',
-        type: 'application/pdf',
-        size: '450 KB'
-      });
-      addDocument({
-        name: 'PAN Card',
-        type: 'application/pdf',
-        size: '320 KB'
-      });
-      setIsFetchingDigiLocker(false);
+    try {
+      const { syncDigiLockerAPI } = await import('../../../api/client');
+      await syncDigiLockerAPI();
+      await fetchDocuments();
       setDigiLockerConnected(true);
-    }, 2000);
+    } catch (err) {
+      console.error("Failed to sync DigiLocker", err);
+    } finally {
+      setIsFetchingDigiLocker(false);
+    }
   };
 
   return (
@@ -201,90 +246,163 @@ export function DocumentDrive() {
       {showUploadModal && (
         <UploadDocumentModal 
           onClose={() => setShowUploadModal(false)} 
-          onUpload={addDocument} 
+          onUpload={() => {
+            fetchDocuments();
+            setShowUploadModal(false);
+          }} 
         />
       )}
 
       {/* Verification Details Modal */}
       {selectedDocForView && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white max-w-md w-full rounded-2xl p-6 shadow-2xl border border-slate-200 overflow-hidden relative">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
-              <div>
-                <h3 className="font-extrabold text-base text-slate-900">{selectedDocForView.name || selectedDocForView.type}</h3>
-                <p className="text-xs text-slate-500 font-mono mt-0.5">{selectedDocForView.id || 'DOC-VAULT'}</p>
+          <div className="bg-white max-w-2xl w-full rounded-2xl p-6 shadow-2xl border border-slate-200 overflow-hidden relative">
+            
+            {/* Header */}
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">{selectedDocForView.name || selectedDocForView.type}</h3>
+                  <p className="text-xs text-slate-500 font-mono mt-0.5">{selectedDocForView.id || 'DOC-VAULT'}</p>
+                </div>
               </div>
               <button 
                 onClick={() => setSelectedDocForView(null)} 
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="text-[10px] font-black uppercase text-slate-400 mb-1">OCR Verification Status</div>
-                <div className="flex items-center justify-between">
-                  <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full ${
-                    selectedDocForView.status === 'verified' ? 'bg-emerald-100 text-emerald-800' :
-                    selectedDocForView.status === 'ai_flagged' ? 'bg-red-100 text-red-800' :
-                    'bg-amber-100 text-amber-800'
+            <div className="space-y-5 max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
+              
+              {/* Top Status Banner */}
+              <div className={`border rounded-xl p-4 flex items-center justify-between shadow-sm ${
+                selectedDocForView.status === 'verified' ? 'bg-emerald-50 border-emerald-200' : 
+                selectedDocForView.status === 'ai_flagged' ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${
+                    selectedDocForView.status === 'verified' ? 'bg-emerald-100 text-emerald-700' : 
+                    selectedDocForView.status === 'ai_flagged' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
                   }`}>
-                    {selectedDocForView.status === 'verified' ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
-                    {selectedDocForView.status ? selectedDocForView.status.toUpperCase() : 'VERIFIED'}
-                  </span>
-                  {selectedDocForView.confidence && (
-                    <span className="text-xs font-extrabold text-slate-700">
-                      {Math.round(selectedDocForView.confidence * 100)}% Confidence
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {selectedDocForView.matches && selectedDocForView.matches.length > 0 && (
-                <div>
-                  <div className="text-[11px] font-bold text-slate-700 mb-1.5">Profile Matches:</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedDocForView.matches.map((m, idx) => (
-                      <span key={idx} className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <CheckCircle2 size={10} /> {m.replace(/_/g, ' ').toUpperCase()}
-                      </span>
-                    ))}
+                    {selectedDocForView.status === 'verified' ? <CheckCircle2 size={24} /> : <AlertTriangle size={24} />}
+                  </div>
+                  <div>
+                    <h4 className={`text-base font-extrabold uppercase ${
+                      selectedDocForView.status === 'verified' ? 'text-emerald-900' : 
+                      selectedDocForView.status === 'ai_flagged' ? 'text-red-900' : 'text-amber-900'
+                    }`}>
+                      {selectedDocForView.status === 'verified' ? 'Verified' : 
+                       selectedDocForView.status === 'ai_flagged' ? 'AI Flagged' : 'Pending'}
+                    </h4>
+                    <p className={`text-xs font-medium ${
+                      selectedDocForView.status === 'verified' ? 'text-emerald-700' : 
+                      selectedDocForView.status === 'ai_flagged' ? 'text-red-700' : 'text-amber-700'
+                    }`}>
+                      PRAVAH OCR Engine
+                    </p>
                   </div>
                 </div>
-              )}
+                {selectedDocForView.confidence !== undefined && (
+                  <div className="text-right">
+                    <div className={`text-lg font-black ${
+                      selectedDocForView.confidence >= 0.85 ? 'text-emerald-700' : 
+                      selectedDocForView.confidence >= 0.60 ? 'text-amber-700' : 'text-red-700'
+                    }`}>
+                      {Math.round(selectedDocForView.confidence * 100)}%
+                    </div>
+                    <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Confidence</div>
+                  </div>
+                )}
+              </div>
 
+              {/* Mismatches Section */}
               {selectedDocForView.mismatches && selectedDocForView.mismatches.length > 0 && (
-                <div>
-                  <div className="text-[11px] font-bold text-red-700 mb-1.5">Mismatches / Attention Required:</div>
-                  <div className="space-y-1.5">
-                    {selectedDocForView.mismatches.map((m, idx) => (
-                      <div key={idx} className="text-[11px] bg-red-50 text-red-800 p-2 rounded border border-red-200">
-                        <span className="font-bold capitalize">{m.field.replace(/_/g, ' ')}:</span> {m.reason}
+                <div className="space-y-2.5">
+                  <h5 className="text-xs font-black uppercase tracking-wider text-red-600 flex items-center gap-1.5">
+                    <AlertTriangle size={14} /> Critical Mismatches Detected
+                  </h5>
+                  <div className="space-y-2">
+                    {selectedDocForView.mismatches.map((m, mIdx) => (
+                      <div key={mIdx} className="bg-red-50/50 border border-red-100 rounded-lg p-3 relative overflow-hidden">
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-400"></div>
+                        <div className="pl-2">
+                          <h6 className="font-bold text-slate-900 text-sm capitalize mb-1">{m.field?.replace(/_/g, ' ') || 'Discrepancy'}</h6>
+                          <p className="text-xs text-red-800 font-medium leading-relaxed mb-2">{m.reason}</p>
+                          {(m.expected || m.extracted) && (
+                            <div className="grid grid-cols-2 gap-3 mt-2 pt-2 border-t border-red-100/50">
+                              <div>
+                                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Expected (Profile)</span>
+                                <span className="block text-xs font-medium text-slate-700 mt-0.5">{m.expected || 'N/A'}</span>
+                              </div>
+                              <div>
+                                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Found (Document)</span>
+                                <span className="block text-xs font-medium text-slate-700 mt-0.5">{m.extracted || 'N/A'}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
+              {/* AI Verification Remarks */}
               {selectedDocForView.reasons && selectedDocForView.reasons.length > 0 && (
-                <div>
-                  <div className="text-[11px] font-bold text-slate-700 mb-1">Verification Remarks:</div>
-                  <ul className="text-xs text-slate-600 list-disc pl-4 space-y-0.5">
-                    {selectedDocForView.reasons.map((r, idx) => (
-                      <li key={idx}>{r}</li>
-                    ))}
-                  </ul>
+                <div className="space-y-2">
+                   <h5 className="text-xs font-black uppercase tracking-wider text-slate-500">AI Observations</h5>
+                   <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5">
+                     <ul className="text-xs text-slate-700 space-y-1.5 list-disc pl-4 marker:text-slate-400">
+                       {selectedDocForView.reasons.map((r, i) => <li key={i}>{r}</li>)}
+                     </ul>
+                   </div>
                 </div>
               )}
 
-              <div className="flex justify-end pt-2">
+              {/* Success / Matched Fields */}
+              {selectedDocForView.matches && selectedDocForView.matches.length > 0 && (
+                <div className="space-y-2">
+                  <h5 className="text-xs font-black uppercase tracking-wider text-slate-500">Verified Matches</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedDocForView.matches.map((m, idx) => (
+                      <span key={idx} className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <CheckCircle2 size={12} className="text-emerald-500" /> {m.replace(/_/g, ' ').toUpperCase()}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Extracted Data Summary */}
+              {selectedDocForView.extracted_data && Object.keys(selectedDocForView.extracted_data).length > 0 && (
+                 <div className="space-y-2 pt-2 border-t border-slate-100">
+                   <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">Extracted Metadata</h5>
+                   <div className="grid grid-cols-2 gap-3">
+                     {Object.entries(selectedDocForView.extracted_data)
+                       .filter(([k, v]) => v && typeof v !== 'object' && k !== 'raw_extracted_text')
+                       .slice(0, 6)
+                       .map(([key, value]) => (
+                         <div key={key} className="bg-white border border-slate-100 rounded-md p-2 shadow-sm">
+                            <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wide truncate">{key.replace(/_/g, ' ')}</span>
+                            <span className="block font-medium text-slate-800 text-xs mt-0.5 truncate">{String(value)}</span>
+                         </div>
+                     ))}
+                   </div>
+                 </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end pt-4 mt-2 border-t border-slate-100 sticky bottom-0 bg-white/90 backdrop-blur pb-1">
                 <button
                   onClick={() => setSelectedDocForView(null)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors"
+                  className="px-6 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-xl transition-colors shadow-md shadow-slate-800/20"
                 >
-                  Close
+                  Close Viewer
                 </button>
               </div>
             </div>

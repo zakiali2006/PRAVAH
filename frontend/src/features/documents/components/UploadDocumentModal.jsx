@@ -67,11 +67,17 @@ export function UploadDocumentModal({ onClose, onUpload }) {
         else if (validationData.status === 'WARNING' || validationData.status === 'INVALID') finalStatus = 'ai_flagged';
     }
 
+    const formatSize = (bytes) => {
+      if (!bytes) return '0 KB';
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    };
+
     await onUpload({
       id: documentId ? `DOC-${documentId}` : undefined,
       name: docName,
       type: selectedFile?.type || 'application/pdf',
-      size: selectedFile ? `${(selectedFile.size / 1024 / 1024).toFixed(1)} MB` : '1.2 MB',
+      size: selectedFile ? formatSize(selectedFile.size) : '1.2 MB',
       status: finalStatus,
       confidence: validationData?.confidence,
       matches: validationData?.matches || [],
@@ -84,7 +90,7 @@ export function UploadDocumentModal({ onClose, onUpload }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white max-w-lg w-full rounded-2xl p-6 shadow-2xl border border-slate-200 overflow-hidden relative transition-all duration-300">
+      <div className="bg-white max-w-2xl w-full rounded-2xl p-6 shadow-2xl border border-slate-200 overflow-hidden relative transition-all duration-300">
         
         {/* Header */}
         <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
@@ -112,7 +118,11 @@ export function UploadDocumentModal({ onClose, onUpload }) {
               <div className="flex flex-col items-center animate-in fade-in zoom-in duration-300">
                 <File size={32} className="text-emerald-500 mb-2" />
                 <p className="text-sm font-bold text-slate-800 truncate w-full px-4">{selectedFile.name}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {selectedFile.size < 1024 * 1024 
+                    ? `${(selectedFile.size / 1024).toFixed(0)} KB` 
+                    : `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`}
+                </p>
                 {step === 'idle' && (
                   <p className="text-[10px] text-emerald-600 font-bold mt-2 bg-emerald-100 px-2 py-0.5 rounded">Click to change file</p>
                 )}
@@ -193,86 +203,130 @@ export function UploadDocumentModal({ onClose, onUpload }) {
 
           {/* STEP 3: Result (Real AI Verification Output) */}
           {(step === 'result' || step === 'saving') && validationData && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500 border-t border-slate-100 pt-4 max-h-[380px] overflow-y-auto pr-1">
+            <div className="space-y-5 animate-in fade-in slide-in-from-top-4 duration-500 border-t border-slate-100 pt-5 max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
               
-              {/* Dynamic Status Banner */}
-              <div className={`border rounded-xl p-3.5 flex flex-col gap-2.5 shadow-sm ${validationData.status === 'VALID' ? 'bg-emerald-50 border-emerald-200' : validationData.status === 'WARNING' ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {validationData.status === 'VALID' ? (
-                       <CheckCircle2 className="text-emerald-600 shrink-0" size={20} />
-                    ) : (
-                       <AlertTriangle className={`shrink-0 ${validationData.status === 'WARNING' ? 'text-amber-600' : 'text-red-600'}`} size={20} />
-                    )}
-                    <h4 className={`text-sm font-extrabold ${validationData.status === 'VALID' ? 'text-emerald-900' : validationData.status === 'WARNING' ? 'text-amber-900' : 'text-red-900'}`}>
-                      Verification: {validationData.status}
-                    </h4>
+              {/* Top Status Banner */}
+              <div className={`border rounded-xl p-4 flex items-center justify-between shadow-sm ${
+                validationData.status === 'VALID' ? 'bg-emerald-50 border-emerald-200' : 
+                validationData.status === 'WARNING' ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${
+                    validationData.status === 'VALID' ? 'bg-emerald-100 text-emerald-700' : 
+                    validationData.status === 'WARNING' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                    {validationData.status === 'VALID' ? <CheckCircle2 size={24} /> : <AlertTriangle size={24} />}
                   </div>
-                  {validationData.confidence !== undefined && (
-                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
-                      validationData.confidence >= 0.85 ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
-                      validationData.confidence >= 0.60 ? 'bg-amber-100 text-amber-800 border-amber-300' :
-                      'bg-red-100 text-red-800 border-red-300'
+                  <div>
+                    <h4 className={`text-base font-extrabold ${
+                      validationData.status === 'VALID' ? 'text-emerald-900' : 
+                      validationData.status === 'WARNING' ? 'text-amber-900' : 'text-red-900'
                     }`}>
-                      {Math.round(validationData.confidence * 100)}% Confidence
-                    </span>
-                  )}
+                      {validationData.status === 'VALID' ? 'Document Verified' : 
+                       validationData.status === 'WARNING' ? 'Needs Attention' : 'Verification Failed'}
+                    </h4>
+                    <p className={`text-xs font-medium ${
+                      validationData.status === 'VALID' ? 'text-emerald-700' : 
+                      validationData.status === 'WARNING' ? 'text-amber-700' : 'text-red-700'
+                    }`}>
+                      AI Analysis Complete
+                    </p>
+                  </div>
                 </div>
-                
-                {/* Verified Matches Chips */}
-                {validationData.matches && validationData.matches.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {validationData.matches.map((m, idx) => (
-                      <span key={idx} className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100/80 text-emerald-800 border border-emerald-200">
-                        <CheckCircle2 size={10} /> {m.replace(/_/g, ' ').toUpperCase()} MATCHED
-                      </span>
-                    ))}
+                {validationData.confidence !== undefined && (
+                  <div className="text-right">
+                    <div className={`text-lg font-black ${
+                      validationData.confidence >= 0.85 ? 'text-emerald-700' : 
+                      validationData.confidence >= 0.60 ? 'text-amber-700' : 'text-red-700'
+                    }`}>
+                      {Math.round(validationData.confidence * 100)}%
+                    </div>
+                    <div className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Confidence</div>
                   </div>
                 )}
+              </div>
 
-                {/* Render Reasons */}
-                {validationData.reasons && validationData.reasons.length > 0 && (
-                  <ul className={`text-[11px] leading-relaxed list-disc pl-4 mt-1 ${validationData.status === 'VALID' ? 'text-emerald-800' : validationData.status === 'WARNING' ? 'text-amber-800' : 'text-red-800'}`}>
-                    {validationData.reasons.map((r, i) => <li key={i}>{r}</li>)}
-                  </ul>
-                )}
-
-                {/* Render Mismatches Breakdown if any */}
-                {validationData.mismatches && validationData.mismatches.length > 0 && (
-                  <div className="mt-2 space-y-1.5 bg-white/80 p-2.5 rounded-lg border border-slate-200/80">
-                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Mismatches Detected</div>
+              {/* Mismatches Section - Prominently Displayed if Present */}
+              {validationData.mismatches && validationData.mismatches.length > 0 && (
+                <div className="space-y-2.5">
+                  <h5 className="text-xs font-black uppercase tracking-wider text-red-600 flex items-center gap-1.5">
+                    <AlertTriangle size={14} /> Critical Mismatches Detected
+                  </h5>
+                  <div className="space-y-2">
                     {validationData.mismatches.map((m, mIdx) => (
-                      <div key={mIdx} className="text-[11px] text-slate-700 bg-slate-50 p-2 rounded border border-slate-200 flex flex-col gap-0.5">
-                        <div className="font-bold text-slate-900 capitalize">{m.field.replace(/_/g, ' ')}: <span className="font-normal text-slate-600">{m.reason}</span></div>
-                        {m.expected && <div className="text-[10px] text-slate-500 font-mono">Expected: <span className="font-semibold text-slate-800">{m.expected}</span></div>}
-                        {m.extracted && <div className="text-[10px] text-slate-500 font-mono">Extracted: <span className="font-semibold text-slate-800">{m.extracted}</span></div>}
+                      <div key={mIdx} className="bg-red-50/50 border border-red-100 rounded-lg p-3 relative overflow-hidden group">
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-400"></div>
+                        <div className="pl-2">
+                          <h6 className="font-bold text-slate-900 text-sm capitalize mb-1">{m.field.replace(/_/g, ' ')}</h6>
+                          <p className="text-xs text-red-800 font-medium leading-relaxed mb-2">{m.reason}</p>
+                          <div className="grid grid-cols-2 gap-3 mt-2 pt-2 border-t border-red-100/50">
+                            <div>
+                              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Expected (Profile)</span>
+                              <span className="block text-xs font-medium text-slate-700 mt-0.5">{m.expected || 'N/A'}</span>
+                            </div>
+                            <div>
+                              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Found (Document)</span>
+                              <span className="block text-xs font-medium text-slate-700 mt-0.5">{m.extracted || 'N/A'}</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Extracted Fields Summary */}
-                {validationData.extracted_data && Object.keys(validationData.extracted_data).length > 0 && (
-                   <div className="bg-white rounded-lg border border-slate-200 p-2.5 text-[10px] grid grid-cols-2 gap-2 mt-1">
+              {/* AI Verification Remarks */}
+              {validationData.reasons && validationData.reasons.length > 0 && (
+                <div className="space-y-2">
+                   <h5 className="text-xs font-black uppercase tracking-wider text-slate-500">AI Observations</h5>
+                   <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5">
+                     <ul className="text-xs text-slate-700 space-y-1.5 list-disc pl-4 marker:text-slate-400">
+                       {validationData.reasons.map((r, i) => <li key={i}>{r}</li>)}
+                     </ul>
+                   </div>
+                </div>
+              )}
+
+              {/* Success / Matched Fields */}
+              {validationData.matches && validationData.matches.length > 0 && (
+                <div className="space-y-2">
+                  <h5 className="text-xs font-black uppercase tracking-wider text-slate-500">Verified Matches</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {validationData.matches.map((m, idx) => (
+                      <span key={idx} className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <CheckCircle2 size={12} className="text-emerald-500" /> {m.replace(/_/g, ' ').toUpperCase()}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Extracted Data Summary */}
+              {validationData.extracted_data && Object.keys(validationData.extracted_data).length > 0 && (
+                 <div className="space-y-2 pt-2 border-t border-slate-100">
+                   <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">Extracted Metadata</h5>
+                   <div className="grid grid-cols-2 gap-3">
                      {Object.entries(validationData.extracted_data)
                        .filter(([k, v]) => v && typeof v !== 'object' && k !== 'raw_extracted_text')
                        .slice(0, 6)
                        .map(([key, value]) => (
-                         <div key={key} className="overflow-hidden">
-                            <span className="block text-slate-400 font-semibold truncate capitalize">{key.replace(/_/g, ' ')}</span>
-                            <span className="block font-bold text-slate-800 text-xs truncate">{String(value)}</span>
+                         <div key={key} className="bg-white border border-slate-100 rounded-md p-2 shadow-sm">
+                            <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wide truncate">{key.replace(/_/g, ' ')}</span>
+                            <span className="block font-medium text-slate-800 text-xs mt-0.5 truncate">{String(value)}</span>
                          </div>
                      ))}
                    </div>
-                )}
-              </div>
+                 </div>
+              )}
 
-              <div className="flex justify-end gap-3 pt-2">
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-4 mt-2 border-t border-slate-100 sticky bottom-0 bg-white/90 backdrop-blur pb-2">
                 <button
                   type="button"
                   onClick={onClose}
                   disabled={step === 'saving'}
-                  className="px-4 py-1.5 text-sm font-bold text-slate-600 hover:bg-slate-50 rounded-lg"
+                  className="px-5 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
@@ -280,10 +334,10 @@ export function UploadDocumentModal({ onClose, onUpload }) {
                   type="button"
                   onClick={handleFinalSave}
                   disabled={step === 'saving'}
-                  className="px-5 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg flex items-center gap-2 disabled:opacity-70 shadow-sm"
+                  className="px-6 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center gap-2 disabled:opacity-70 shadow-md shadow-blue-600/20 transition-colors"
                 >
                   {step === 'saving' ? <Loader2 size={16} className="animate-spin" /> : null}
-                  Acknowledge & Save
+                  {validationData.status === 'VALID' ? 'Save Document' : 'Save & Flag for Review'}
                 </button>
               </div>
             </div>
