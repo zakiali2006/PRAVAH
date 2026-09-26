@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
+from app.schemas.risk import RiskAssessmentResponse
 
 
 class ApplicationStageBase(BaseModel):
@@ -47,6 +48,7 @@ class ApplicationResponse(ApplicationBase):
     submitted_at: Optional[datetime] = None
     created_at: datetime
     stages: List[ApplicationStageResponse] = []
+    risk_score: Optional[RiskAssessmentResponse] = None
 
     class Config:
         from_attributes = True

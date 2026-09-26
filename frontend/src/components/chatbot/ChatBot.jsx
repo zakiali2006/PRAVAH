@@ -1,14 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Bot, X, Send, Loader2, FileText, AlertCircle } from "lucide-react";
+import { Bot, X, Send, Loader2, FileText, AlertCircle, Sparkles, Copy, Check, ChevronDown } from "lucide-react";
 import api from "../../api/axios";
 
 export function ChatBot() {
   const [open, setOpen] = useState(false);
+  const [applications, setApplications] = useState([]);
+  const [selectedAppId, setSelectedAppId] = useState("");
+  const [copiedField, setCopiedField] = useState(null);
+
   const [msgs, setMsgs] = useState([
     {
       role: "assistant",
-      text: "Namaskar. I am your PRAVAH AI Document Assistant. Ask me anything about your uploaded documents, compliance certificates, and approvals.",
+      text: "Namaskar. I am your PRAVAH AI Copilot. Ask me anything about your uploaded compliance documents, application status, document verification, or AI risk score.",
       sources: [],
+      suggestions: [],
     },
   ]);
   const [input, setInput] = useState("");
@@ -19,8 +24,29 @@ export function ChatBot() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [msgs, open]);
 
-  const send = async () => {
-    const text = input.trim();
+  // Load user applications when opened
+  useEffect(() => {
+    if (open) {
+      const token = localStorage.getItem("token");
+      if (token) {
+        api
+          .get("/applications/me")
+          .then((res) => {
+            const apps = Array.isArray(res.data) ? res.data : [];
+            setApplications(apps);
+            if (apps.length > 0 && !selectedAppId) {
+              setSelectedAppId(apps[0].id);
+            }
+          })
+          .catch(() => {
+            // Silently fall back to standard RAG if applications cannot be loaded
+          });
+      }
+    }
+  }, [open]);
+
+  const send = async (customText = null) => {
+    const text = (customText || input).trim();
     if (!text || busy) return;
 
     // Check if token exists
@@ -31,8 +57,9 @@ export function ChatBot() {
         { role: "user", text },
         {
           role: "assistant",
-          text: "You are currently not logged in. Please sign in to your PRAVAH account to query your private uploaded documents.",
+          text: "You are currently not logged in. Please sign in to your PRAVAH account to query your private uploaded documents and applications.",
           sources: [],
+          suggestions: [],
           isError: true,
         },
       ]);
@@ -40,19 +67,25 @@ export function ChatBot() {
       return;
     }
 
-    const next = [...msgs, { role: "user", text, sources: [] }];
+    const next = [...msgs, { role: "user", text, sources: [], suggestions: [] }];
     setMsgs(next);
     setInput("");
     setBusy(true);
 
     try {
-      const response = await api.post("/chat", {
+      const payload = {
         message: text,
-      });
+      };
+      if (selectedAppId) {
+        payload.application_id = selectedAppId;
+      }
+
+      const response = await api.post("/chat", payload);
 
       const replyData = response?.data?.data || {};
       const reply = replyData.reply || "I have processed your request.";
       const sources = Array.isArray(replyData.sources) ? replyData.sources : [];
+      const suggestions = Array.isArray(replyData.suggestions) ? replyData.suggestions : [];
 
       setMsgs([
         ...next,
@@ -60,6 +93,7 @@ export function ChatBot() {
           role: "assistant",
           text: reply,
           sources: sources,
+          suggestions: suggestions,
         },
       ]);
     } catch (err) {
@@ -68,6 +102,10 @@ export function ChatBot() {
 
       if (status === 401) {
         errorMsg = "Your session has expired. Please log in again to access your documents.";
+      } else if (status === 403) {
+        errorMsg = "You are not authorized to query this application.";
+      } else if (status === 404) {
+        errorMsg = "The specified application could not be found.";
       } else if (status === 400) {
         errorMsg = err.response?.data?.message || "Invalid question format. Please check your message.";
       } else if (err.response?.data?.message) {
@@ -80,6 +118,7 @@ export function ChatBot() {
           role: "assistant",
           text: errorMsg,
           sources: [],
+          suggestions: [],
           isError: true,
         },
       ]);
@@ -88,30 +127,62 @@ export function ChatBot() {
     }
   };
 
+  const copyToClipboard = (text, field) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
   return (
     <>
       {open && (
-        <div className="fixed bottom-20 right-6 z-50 max-w-sm w-full sm:w-88 flex flex-col h-[480px]">
+        <div className="fixed bottom-20 right-6 z-50 max-w-sm w-full sm:w-96 flex flex-col h-[520px]">
           <div className="bg-slate-900 text-white rounded-2xl shadow-2xl border border-slate-700/80 backdrop-blur-md flex flex-col h-full overflow-hidden">
             
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/90">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                  <Bot size={18} />
+            <div className="p-3.5 border-b border-slate-800 bg-slate-900/90 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                    <Bot size={18} />
+                  </div>
+                  <div>
+                    <div className="font-extrabold text-sm tracking-tight text-white flex items-center gap-1.5">
+                      PRAVAH Copilot
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">AI</span>
+                    </div>
+                    <div className="text-[10px] font-medium text-slate-400">
+                      {selectedAppId ? "Application Context Active" : "General Document Q&A"}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-extrabold text-sm tracking-tight text-white">Ask PRAVAH</div>
-                  <div className="text-[10px] font-medium text-slate-400">RAG Document Assistant</div>
-                </div>
+                <button
+                  onClick={() => setOpen(false)}
+                  aria-label="Close chat"
+                  className="text-slate-400 hover:text-white transition-colors"
+                >
+                  <X size={18} />
+                </button>
               </div>
-              <button
-                onClick={() => setOpen(false)}
-                aria-label="Close chat"
-                className="text-slate-400 hover:text-white transition-colors"
-              >
-                <X size={18} />
-              </button>
+
+              {/* Context Scope Dropdown */}
+              {applications.length > 0 && (
+                <div className="flex items-center gap-2 pt-1 border-t border-slate-800/80 text-[11px]">
+                  <span className="text-slate-400 font-medium shrink-0">Scope:</span>
+                  <select
+                    value={selectedAppId}
+                    onChange={(e) => setSelectedAppId(e.target.value)}
+                    className="flex-1 bg-slate-950 text-blue-300 font-semibold px-2 py-1 rounded border border-slate-700 text-xs focus:outline-none focus:border-blue-500 cursor-pointer"
+                  >
+                    <option value="">General (All Documents)</option>
+                    {applications.map((app) => (
+                      <option key={app.id} value={app.id}>
+                        {app.id} — {app.service_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Chat Area */}
@@ -122,7 +193,7 @@ export function ChatBot() {
                   className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
                 >
                   <div
-                    className={`px-3 py-2 rounded-xl text-xs leading-relaxed max-w-[88%] ${
+                    className={`px-3 py-2 rounded-xl text-xs leading-relaxed max-w-[90%] ${
                       m.role === "user"
                         ? "bg-blue-600 text-white rounded-br-sm"
                         : m.isError
@@ -137,6 +208,45 @@ export function ChatBot() {
                       </div>
                     )}
                     <div>{m.text}</div>
+
+                    {/* Structured Form Suggestions */}
+                    {m.suggestions && m.suggestions.length > 0 && (
+                      <div className="mt-2.5 pt-2 border-t border-slate-700/60 space-y-2">
+                        <div className="text-[10px] font-bold text-amber-400 flex items-center gap-1">
+                          <Sparkles size={11} /> Suggested Form Input
+                        </div>
+                        {m.suggestions.map((s, sIdx) => (
+                          <div
+                            key={sIdx}
+                            className="p-2 bg-slate-950/90 rounded-lg border border-amber-500/30 text-[11px] space-y-1"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-amber-300 uppercase text-[10px]">
+                                Field: {s.field}
+                              </span>
+                              <button
+                                onClick={() => copyToClipboard(s.suggested_value, `${s.field}-${sIdx}`)}
+                                className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors"
+                              >
+                                {copiedField === `${s.field}-${sIdx}` ? (
+                                  <>
+                                    <Check size={10} /> Copied
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy size={10} /> Copy
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                            <div className="font-mono text-white bg-slate-900 px-1.5 py-0.5 rounded">
+                              {s.suggested_value}
+                            </div>
+                            <p className="text-[10px] text-slate-400 italic">{s.reason}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Verified Document Sources */}
                     {m.sources && m.sources.length > 0 && (
@@ -162,11 +272,35 @@ export function ChatBot() {
               ))}
               {busy && (
                 <div className="flex items-center gap-2 text-[11px] text-slate-400 px-1">
-                  <Loader2 size={12} className="animate-spin text-blue-400" /> Searching documents & generating answer…
+                  <Loader2 size={12} className="animate-spin text-blue-400" /> Grounding application data & generating guidance…
                 </div>
               )}
               <div ref={endRef} />
             </div>
+
+            {/* Quick Copilot Prompts (if application is selected) */}
+            {selectedAppId && (
+              <div className="px-3 py-1.5 bg-slate-950/80 border-t border-slate-800 flex items-center gap-1.5 overflow-x-auto text-[10px]">
+                <button
+                  onClick={() => send("Why is my application given this risk score and what should I fix?")}
+                  className="shrink-0 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 transition-colors"
+                >
+                  Explain Risk Score
+                </button>
+                <button
+                  onClick={() => send("Are all my uploaded documents verified and consistent with my business profile?")}
+                  className="shrink-0 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 transition-colors"
+                >
+                  Check Document Status
+                </button>
+                <button
+                  onClick={() => send("What is the next step for my application?")}
+                  className="shrink-0 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 transition-colors"
+                >
+                  Next Steps
+                </button>
+              </div>
+            )}
 
             {/* Input Area */}
             <div className="p-3 border-t border-slate-800 bg-slate-900">
@@ -175,12 +309,18 @@ export function ChatBot() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !busy && send()}
-                  placeholder={busy ? "Thinking..." : "Ask about your uploaded documents..."}
+                  placeholder={
+                    busy
+                      ? "Thinking..."
+                      : selectedAppId
+                      ? "Ask Copilot about your application..."
+                      : "Ask about your uploaded documents..."
+                  }
                   disabled={busy}
                   className="flex-1 bg-slate-950 text-white text-xs px-3 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-blue-500 placeholder-slate-500 disabled:opacity-50"
                 />
                 <button
-                  onClick={send}
+                  onClick={() => send()}
                   disabled={busy || !input.trim()}
                   className="p-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-xl transition-colors shrink-0"
                   aria-label="Send message"
@@ -204,4 +344,3 @@ export function ChatBot() {
     </>
   );
 }
-

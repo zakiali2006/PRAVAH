@@ -207,34 +207,59 @@ def validate_document(
         from app.engines.extraction_engine import extract_structured_data
         from app.engines.validation_engine import validate_document_data
         from app.engines.vectorize_engine import process_document_embeddings
-
-        # Phase 4: OCR
+        from app.models.business import BusinessProfile
         from app.services.storage_service import storage_service
 
+        # Phase 4: OCR Text Extraction
         absolute_file_path = storage_service.get_file_path(doc.file_path)
         raw_text = extract_raw_text(absolute_file_path, doc.mime_type)
 
-        # Phase 5: Extraction
+        # Phase 5: Structured Data Extraction
         structured_data = extract_structured_data(raw_text, doc_type_name)
 
-        # Phase 6: Validation
-        # TODO: @bhagyesh Dependency: Pull real business name from business_profiles table
-        mock_expected_business_name = "Acme Corp"
+        # Phase 6: Automated Verification against real authenticated BusinessProfile
+        business_profile = (
+            db.query(BusinessProfile)
+            .filter(BusinessProfile.user_id == current_user.id)
+            .first()
+        )
 
         validation_result = validate_document_data(
-            structured_data, mock_expected_business_name
+            extracted_data=structured_data,
+            business_profile=business_profile,
+            raw_text=raw_text,
         )
 
         # Phase 7: Vectorization (Run in background to avoid blocking API response)
         background_tasks.add_task(process_document_embeddings, db, doc.id, raw_text)
 
-        # Persist status to document record
+        # Persist status and detailed verification telemetry to document record
         doc.status = validation_result.status.value
+        doc.validation_status = validation_result.status.value
+        doc.validation_reason = "; ".join(validation_result.reasons)[:1024]
+        doc.extracted_data = {
+            "fields": structured_data.model_dump(),
+            "verification": validation_result.model_dump(),
+        }
         db.commit()
+        db.refresh(doc)
+
+        # Trigger risk score recalculation for affected applications
+        try:
+            from app.models.application import Application
+            from app.services.risk_scoring_service import risk_scoring_service
+            user_apps = db.query(Application).filter(Application.user_id == doc.uploader_id).all()
+            for u_app in user_apps:
+                risk_scoring_service.calculate_risk(db, u_app.id, persist=True)
+        except Exception:
+            pass
 
         data = {
             "document_id": doc.id,
             "status": validation_result.status.value,
+            "confidence": validation_result.confidence,
+            "matches": validation_result.matches,
+            "mismatches": [m.model_dump() for m in validation_result.mismatches],
             "reasons": validation_result.reasons,
             "extracted_data": structured_data.model_dump(),
         }
@@ -254,10 +279,27 @@ def get_validation_result(
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         return error_response(ErrorCode.RESOURCE_NOT_FOUND, "Document not found", 404)
-    if doc.uploader_id != current_user.id:
+
+    user_role = (current_user.role or "").upper()
+    if doc.uploader_id != current_user.id and user_role not in ["OFFICER", "SYSTEM_ADMIN"]:
         return error_response(
             ErrorCode.FORBIDDEN, "Not authorized to access this document", 403
         )
 
-    data = {"document_id": doc.id, "status": doc.status}
+    verification_meta = (
+        doc.extracted_data.get("verification") if isinstance(doc.extracted_data, dict) else {}
+    ) or {}
+    fields_meta = (
+        doc.extracted_data.get("fields") if isinstance(doc.extracted_data, dict) else {}
+    ) or {}
+
+    data = {
+        "document_id": doc.id,
+        "status": doc.validation_status or doc.status,
+        "confidence": verification_meta.get("confidence", 1.0 if (doc.validation_status or doc.status) == "VALID" else 0.7),
+        "matches": verification_meta.get("matches", []),
+        "mismatches": verification_meta.get("mismatches", []),
+        "reasons": verification_meta.get("reasons", [doc.validation_reason] if doc.validation_reason else []),
+        "extracted_data": fields_meta,
+    }
     return success_response(data, "Validation status retrieved")

@@ -1,14 +1,16 @@
 import React, { useState } from "react";
-import { Loader2, CheckCircle, Clock, AlertTriangle, ChevronRight, Filter, ShieldCheck, X } from "lucide-react";
+import { Loader2, CheckCircle, Clock, AlertTriangle, ChevronRight, Filter, ShieldCheck, X, ShieldAlert, Sparkles, RefreshCw } from "lucide-react";
 import { SectionHead } from "../../../components/common/SectionHead";
 import { Btn } from "../../../components/common/Btn";
 import { useApplications } from "../../../hooks/useApplications";
 import { ActionRequiredModal } from "../components/ActionRequiredModal";
+import { recalculateApplicationRisk } from "../../../api/client";
 
 export function OfficerQueue() {
-  const { applications: queue, loading, updateStatus } = useApplications(true);
+  const { applications: queue, loading, updateStatus, refresh } = useApplications(true);
   const [selectedApp, setSelectedApp] = useState(null);
   const [processingState, setProcessingState] = useState(false);
+  const [recalculatingRisk, setRecalculatingRisk] = useState(false);
 
   const getStatusBadge = (status) => {
     const s = status ? status.toLowerCase() : 'unknown';
@@ -20,8 +22,59 @@ export function OfficerQueue() {
     return <span className="uppercase text-[10px] font-black tracking-wider px-2 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-600">{s}</span>;
   };
 
+  const getTriageBadge = (app) => {
+    const risk = app.risk_score;
+    const cat = risk?.triage_category || (app.ai_score > 65 ? 'HIGH_RISK_REVIEW' : app.ai_score > 30 ? 'DOCUMENT_REVIEW' : 'FAST_TRACK');
+    
+    if (cat === 'FAST_TRACK') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+          <CheckCircle size={11} /> Fast Track
+        </span>
+      );
+    }
+    if (cat === 'DOCUMENT_REVIEW') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+          <AlertTriangle size={11} /> Doc Review
+        </span>
+      );
+    }
+    if (cat === 'HIGH_RISK_REVIEW') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800 border border-red-200">
+          <AlertTriangle size={11} /> High Risk
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+        Standard
+      </span>
+    );
+  };
+
   const handleProcessClick = (app) => {
     setSelectedApp(app);
+  };
+
+  const handleRecalculateRisk = async () => {
+    if (!selectedApp) return;
+    setRecalculatingRisk(true);
+    try {
+      const updatedRisk = await recalculateApplicationRisk(selectedApp.id);
+      setSelectedApp(prev => ({
+        ...prev,
+        ai_score: updatedRisk.score,
+        risk_score: updatedRisk,
+      }));
+      if (refresh) refresh();
+    } catch (err) {
+      console.error("Failed to recalculate risk", err);
+      alert("Failed to recalculate risk. Please try again.");
+    } finally {
+      setRecalculatingRisk(false);
+    }
   };
 
   const submitAction = async (status, actionRemarks) => {
@@ -58,8 +111,8 @@ export function OfficerQueue() {
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase tracking-wider text-xs">
                 <th className="p-4 font-bold">App ID</th>
                 <th className="p-4 font-bold">Service & Applicant</th>
-                <th className="p-4 font-bold">Priority Score</th>
-                <th className="p-4 font-bold">SLA Risk</th>
+                <th className="p-4 font-bold">Risk Score</th>
+                <th className="p-4 font-bold">Smart Triage</th>
                 <th className="p-4 font-bold">Status</th>
                 <th className="p-4 font-bold text-right">Action</th>
               </tr>
@@ -94,23 +147,23 @@ export function OfficerQueue() {
                       <div className="flex items-center gap-2">
                         <div className="w-full bg-slate-200 rounded-full h-2 max-w-[80px]">
                           <div 
-                            className={`h-2 rounded-full ${item.ai_score > 3 ? 'bg-red-500' : item.ai_score > 2 ? 'bg-amber-500' : 'bg-emerald-500'}`} 
-                            style={{ width: `${((item.ai_score || 0) / 5) * 100}%` }}
+                            className={`h-2 rounded-full ${
+                              (item.risk_score?.risk_level === 'HIGH' || item.ai_score > 65) 
+                                ? 'bg-red-500' 
+                                : (item.risk_score?.risk_level === 'MEDIUM' || item.ai_score > 30) 
+                                ? 'bg-amber-500' 
+                                : 'bg-emerald-500'
+                            }`} 
+                            style={{ width: `${Math.min(100, Math.max(0, item.ai_score || 0))}%` }}
                           ></div>
                         </div>
-                        <span className="font-bold text-slate-700">{item.ai_score ? item.ai_score.toFixed(1) : '0.0'}</span>
+                        <span className="font-bold text-xs text-slate-700">
+                          {Math.round(item.ai_score || 0)}/100
+                        </span>
                       </div>
                     </td>
                     <td className="p-4">
-                      {item.ai_score > 3 ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">
-                          <AlertTriangle size={12} /> High
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-700">
-                          <CheckCircle size={12} /> Normal
-                        </span>
-                      )}
+                      {getTriageBadge(item)}
                     </td>
                     <td className="p-4">
                       {getStatusBadge(item.status)}
@@ -136,6 +189,8 @@ export function OfficerQueue() {
         onClose={() => setSelectedApp(null)}
         onAction={submitAction}
         processingState={processingState}
+        onRecalculateRisk={handleRecalculateRisk}
+        recalculatingRisk={recalculatingRisk}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Loader2, CheckCircle, AlertTriangle, ShieldCheck, X, FileText } from 'lucide-react';
+import { Loader2, CheckCircle, AlertTriangle, ShieldCheck, X, FileText, ShieldAlert, RefreshCw } from 'lucide-react';
 
-export function ActionRequiredModal({ selectedApp, onClose, onAction, processingState }) {
+export function ActionRequiredModal({ selectedApp, onClose, onAction, processingState, onRecalculateRisk, recalculatingRisk }) {
   const [actionRemarks, setActionRemarks] = useState("");
 
   if (!selectedApp) return null;
@@ -63,6 +63,73 @@ export function ActionRequiredModal({ selectedApp, onClose, onAction, processing
                 <p className="text-sm text-slate-600 mt-1">{pendingStage.desc}</p>
               </div>
             )}
+
+            {/* Explainable AI Risk Assessment & Smart Triage Card */}
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/80">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className={
+                    (selectedApp.risk_score?.risk_level === 'HIGH' || selectedApp.ai_score > 65)
+                      ? "text-red-600"
+                      : (selectedApp.risk_score?.risk_level === 'MEDIUM' || selectedApp.ai_score > 30)
+                      ? "text-amber-600"
+                      : "text-emerald-600"
+                  } size={18} />
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">
+                    AI Risk Triage Analysis
+                  </h4>
+                </div>
+                <div className="flex items-center gap-2">
+                  {onRecalculateRisk && (
+                    <button
+                      onClick={onRecalculateRisk}
+                      disabled={recalculatingRisk}
+                      title="Recalculate Risk Score"
+                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-blue-600 bg-white border border-slate-200 rounded-md transition-colors"
+                    >
+                      <RefreshCw size={11} className={recalculatingRisk ? "animate-spin text-blue-600" : ""} />
+                      {recalculatingRisk ? "Calculating..." : "Recalculate"}
+                    </button>
+                  )}
+                  <span className={`px-2 py-0.5 rounded text-xs font-black uppercase ${
+                    (selectedApp.risk_score?.risk_level === 'HIGH' || selectedApp.ai_score > 65)
+                      ? "bg-red-100 text-red-700 border border-red-200"
+                      : (selectedApp.risk_score?.risk_level === 'MEDIUM' || selectedApp.ai_score > 30)
+                      ? "bg-amber-100 text-amber-700 border border-amber-200"
+                      : "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                  }`}>
+                    {selectedApp.risk_score?.risk_level || (selectedApp.ai_score > 65 ? "HIGH" : selectedApp.ai_score > 30 ? "MEDIUM" : "LOW")} RISK ({Math.round(selectedApp.ai_score || 0)}/100)
+                  </span>
+                </div>
+              </div>
+
+              {/* Summary */}
+              <p className="text-xs text-slate-600 leading-relaxed font-medium bg-white p-2.5 rounded-lg border border-slate-200/80 mb-3">
+                {selectedApp.risk_score?.summary || `Application evaluated with priority score of ${Math.round(selectedApp.ai_score || 0)}/100.`}
+              </p>
+
+              {/* Factors list */}
+              {selectedApp.risk_score?.factors && selectedApp.risk_score.factors.length > 0 ? (
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-black uppercase text-slate-400">Identified Risk Factors</div>
+                  {selectedApp.risk_score.factors.map((f, fIdx) => (
+                    <div key={fIdx} className="flex items-start justify-between gap-2 p-2 bg-white rounded-md border border-slate-100 text-xs">
+                      <div>
+                        <span className="font-bold text-slate-800">{f.factor}:</span>{" "}
+                        <span className="text-slate-600">{f.reason}</span>
+                      </div>
+                      <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-black bg-red-50 text-red-600 border border-red-100">
+                        +{f.impact} pts
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-100">
+                  <CheckCircle size={14} /> Zero high-risk compliance discrepancies detected across submitted documents.
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="space-y-6">

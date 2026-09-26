@@ -72,18 +72,23 @@ export function UploadDocumentModal({ onClose, onUpload }) {
       name: docName,
       type: selectedFile?.type || 'application/pdf',
       size: selectedFile ? `${(selectedFile.size / 1024 / 1024).toFixed(1)} MB` : '1.2 MB',
-      status: finalStatus
+      status: finalStatus,
+      confidence: validationData?.confidence,
+      matches: validationData?.matches || [],
+      mismatches: validationData?.mismatches || [],
+      reasons: validationData?.reasons || [],
+      extracted_data: validationData?.extracted_data || {}
     });
     onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white max-w-md w-full rounded-2xl p-6 shadow-2xl border border-slate-200 overflow-hidden relative transition-all duration-300">
+      <div className="bg-white max-w-lg w-full rounded-2xl p-6 shadow-2xl border border-slate-200 overflow-hidden relative transition-all duration-300">
         
         {/* Header */}
         <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
-          <h3 className="font-extrabold text-lg text-slate-900">Upload Document</h3>
+          <h3 className="font-extrabold text-lg text-slate-900">Upload & Verify Document</h3>
           <button onClick={onClose} disabled={step === 'analyzing' || step === 'saving'} className="text-slate-400 hover:text-slate-600 disabled:opacity-50">
             <X size={20} />
           </button>
@@ -137,7 +142,7 @@ export function UploadDocumentModal({ onClose, onUpload }) {
                   type="text"
                   value={docName}
                   onChange={(e) => setDocName(e.target.value)}
-                  placeholder="e.g. Fire Safety Layout Plan"
+                  placeholder="e.g. Incorporation Certificate"
                   className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                   required
                 />
@@ -156,13 +161,13 @@ export function UploadDocumentModal({ onClose, onUpload }) {
                   disabled={!selectedFile || !docName}
                   className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg flex items-center gap-2 disabled:opacity-50 transition-colors"
                 >
-                  Upload & Scan
+                  Upload & Verify
                 </button>
               </div>
             </form>
           )}
 
-          {/* STEP 2: Analyzing (AI Simulation) */}
+          {/* STEP 2: Analyzing (AI Verification) */}
           {step === 'analyzing' && (
             <div className="py-4 text-center space-y-4 animate-in fade-in slide-in-from-top-4 duration-500 border-t border-slate-100 pt-6">
               <div className="flex items-center justify-center gap-3">
@@ -172,60 +177,94 @@ export function UploadDocumentModal({ onClose, onUpload }) {
                   <Bot size={20} className="text-blue-600 animate-pulse" />
                 </div>
                 <div className="text-left">
-                  <h4 className="text-sm font-black text-slate-800">PRAVAH AI Scanner</h4>
-                  <p className="text-[11px] text-slate-500">Extracting content and running verifications via Server...</p>
+                  <h4 className="text-sm font-black text-slate-800">PRAVAH OCR & Verification Engine</h4>
+                  <p className="text-[11px] text-slate-500">Scanning document text & cross-referencing Business Profile...</p>
                 </div>
               </div>
 
-              {/* Simulated progress texts */}
+              {/* Progress feedback */}
               <div className="bg-slate-50 p-3 rounded-lg text-xs font-mono text-slate-600 text-left w-full h-[88px] overflow-hidden border border-slate-200">
-                <p className="text-blue-600 animate-pulse">⟳ Uploading document...</p>
-                <p className="text-blue-600 mt-1 animate-pulse" style={{animationDelay: '1s', animationFillMode: 'both'}}>⟳ Extracting text via OCR...</p>
-                <p className="text-blue-600 mt-1 animate-pulse" style={{animationDelay: '2s', animationFillMode: 'both'}}>⟳ Cross-referencing DB profile...</p>
+                <p className="text-blue-600 animate-pulse">⟳ Uploading document securely...</p>
+                <p className="text-blue-600 mt-1 animate-pulse" style={{animationDelay: '1s', animationFillMode: 'both'}}>⟳ Running Gemini Vision OCR text extraction...</p>
+                <p className="text-blue-600 mt-1 animate-pulse" style={{animationDelay: '2s', animationFillMode: 'both'}}>⟳ Matching company name, PAN, and credentials against registered profile...</p>
               </div>
             </div>
           )}
 
-          {/* STEP 3: Result (Real AI Output) */}
+          {/* STEP 3: Result (Real AI Verification Output) */}
           {(step === 'result' || step === 'saving') && validationData && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500 border-t border-slate-100 pt-4">
+            <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500 border-t border-slate-100 pt-4 max-h-[380px] overflow-y-auto pr-1">
               
               {/* Dynamic Status Banner */}
-              <div className={`border rounded-xl p-3 flex gap-3 items-start shadow-sm ${validationData.status === 'VALID' ? 'bg-emerald-50 border-emerald-200' : validationData.status === 'WARNING' ? 'bg-orange-50 border-orange-200' : 'bg-red-50 border-red-200'}`}>
-                {validationData.status === 'VALID' ? (
-                   <CheckCircle2 className="text-emerald-500 shrink-0 mt-0.5" size={18} />
-                ) : (
-                   <AlertTriangle className={`shrink-0 mt-0.5 ${validationData.status === 'WARNING' ? 'text-orange-500' : 'text-red-500'}`} size={18} />
-                )}
-                
-                <div>
-                  <h4 className={`text-[13px] font-bold mb-1 ${validationData.status === 'VALID' ? 'text-emerald-800' : validationData.status === 'WARNING' ? 'text-orange-800' : 'text-red-800'}`}>
-                    AI Validation: {validationData.status}
-                  </h4>
-                  
-                  {/* Render Reasons */}
-                  {validationData.reasons && validationData.reasons.length > 0 ? (
-                    <ul className={`text-[11px] leading-relaxed mb-2 list-disc pl-4 ${validationData.status === 'VALID' ? 'text-emerald-700' : validationData.status === 'WARNING' ? 'text-orange-700' : 'text-red-700'}`}>
-                      {validationData.reasons.map((r, i) => <li key={i}>{r}</li>)}
-                    </ul>
-                  ) : (
-                     <p className={`text-[11px] leading-relaxed mb-2 ${validationData.status === 'VALID' ? 'text-emerald-700' : 'text-orange-700'}`}>
-                       Document processed successfully.
-                     </p>
-                  )}
-
-                  {/* Optional: Render extracted data subset if it exists */}
-                  {validationData.extracted_data && Object.keys(validationData.extracted_data).length > 0 && (
-                     <div className={`bg-white rounded border p-2 text-[10px] grid grid-cols-2 gap-2 mt-2 ${validationData.status === 'VALID' ? 'border-emerald-100' : 'border-orange-100'}`}>
-                       {Object.entries(validationData.extracted_data).slice(0, 4).map(([key, value]) => (
-                         <div key={key} className="overflow-hidden">
-                            <span className="block text-slate-400 font-semibold truncate capitalize">{key.replace(/_/g, ' ')}</span>
-                            <span className="block font-bold text-slate-800 text-xs truncate">{typeof value === 'object' ? '...' : String(value)}</span>
-                         </div>
-                       ))}
-                     </div>
+              <div className={`border rounded-xl p-3.5 flex flex-col gap-2.5 shadow-sm ${validationData.status === 'VALID' ? 'bg-emerald-50 border-emerald-200' : validationData.status === 'WARNING' ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {validationData.status === 'VALID' ? (
+                       <CheckCircle2 className="text-emerald-600 shrink-0" size={20} />
+                    ) : (
+                       <AlertTriangle className={`shrink-0 ${validationData.status === 'WARNING' ? 'text-amber-600' : 'text-red-600'}`} size={20} />
+                    )}
+                    <h4 className={`text-sm font-extrabold ${validationData.status === 'VALID' ? 'text-emerald-900' : validationData.status === 'WARNING' ? 'text-amber-900' : 'text-red-900'}`}>
+                      Verification: {validationData.status}
+                    </h4>
+                  </div>
+                  {validationData.confidence !== undefined && (
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                      validationData.confidence >= 0.85 ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+                      validationData.confidence >= 0.60 ? 'bg-amber-100 text-amber-800 border-amber-300' :
+                      'bg-red-100 text-red-800 border-red-300'
+                    }`}>
+                      {Math.round(validationData.confidence * 100)}% Confidence
+                    </span>
                   )}
                 </div>
+                
+                {/* Verified Matches Chips */}
+                {validationData.matches && validationData.matches.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {validationData.matches.map((m, idx) => (
+                      <span key={idx} className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100/80 text-emerald-800 border border-emerald-200">
+                        <CheckCircle2 size={10} /> {m.replace(/_/g, ' ').toUpperCase()} MATCHED
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Render Reasons */}
+                {validationData.reasons && validationData.reasons.length > 0 && (
+                  <ul className={`text-[11px] leading-relaxed list-disc pl-4 mt-1 ${validationData.status === 'VALID' ? 'text-emerald-800' : validationData.status === 'WARNING' ? 'text-amber-800' : 'text-red-800'}`}>
+                    {validationData.reasons.map((r, i) => <li key={i}>{r}</li>)}
+                  </ul>
+                )}
+
+                {/* Render Mismatches Breakdown if any */}
+                {validationData.mismatches && validationData.mismatches.length > 0 && (
+                  <div className="mt-2 space-y-1.5 bg-white/80 p-2.5 rounded-lg border border-slate-200/80">
+                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Mismatches Detected</div>
+                    {validationData.mismatches.map((m, mIdx) => (
+                      <div key={mIdx} className="text-[11px] text-slate-700 bg-slate-50 p-2 rounded border border-slate-200 flex flex-col gap-0.5">
+                        <div className="font-bold text-slate-900 capitalize">{m.field.replace(/_/g, ' ')}: <span className="font-normal text-slate-600">{m.reason}</span></div>
+                        {m.expected && <div className="text-[10px] text-slate-500 font-mono">Expected: <span className="font-semibold text-slate-800">{m.expected}</span></div>}
+                        {m.extracted && <div className="text-[10px] text-slate-500 font-mono">Extracted: <span className="font-semibold text-slate-800">{m.extracted}</span></div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Extracted Fields Summary */}
+                {validationData.extracted_data && Object.keys(validationData.extracted_data).length > 0 && (
+                   <div className="bg-white rounded-lg border border-slate-200 p-2.5 text-[10px] grid grid-cols-2 gap-2 mt-1">
+                     {Object.entries(validationData.extracted_data)
+                       .filter(([k, v]) => v && typeof v !== 'object' && k !== 'raw_extracted_text')
+                       .slice(0, 6)
+                       .map(([key, value]) => (
+                         <div key={key} className="overflow-hidden">
+                            <span className="block text-slate-400 font-semibold truncate capitalize">{key.replace(/_/g, ' ')}</span>
+                            <span className="block font-bold text-slate-800 text-xs truncate">{String(value)}</span>
+                         </div>
+                     ))}
+                   </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
@@ -235,7 +274,7 @@ export function UploadDocumentModal({ onClose, onUpload }) {
                   disabled={step === 'saving'}
                   className="px-4 py-1.5 text-sm font-bold text-slate-600 hover:bg-slate-50 rounded-lg"
                 >
-                  Cancel Upload
+                  Cancel
                 </button>
                 <button
                   type="button"

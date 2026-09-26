@@ -4,6 +4,7 @@ from app.core.database import get_db
 from app.models.user import User
 from app.api.deps import get_current_user
 from app.schemas.application import ApplicationCreate, ApplicationResponse
+from app.schemas.risk import RiskAssessmentResponse
 from app.services.application_service import ApplicationService
 from app.repositories.application_repo import application_repo
 from typing import List
@@ -52,6 +53,28 @@ def track_application(
         )
 
     return app
+
+
+@router.get("/{application_id:path}/risk", response_model=RiskAssessmentResponse)
+def get_my_application_risk(
+    application_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    app = application_repo.get(db, id=application_id)
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    user_role = (
+        getattr(current_user.role, "name", None) or str(current_user.role or "")
+    ).upper()
+    if app.user_id != current_user.id and user_role not in ["OFFICER", "SYSTEM_ADMIN"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Not authorized to view risk assessment for this application",
+        )
+    from app.services.risk_scoring_service import risk_scoring_service
+
+    return risk_scoring_service.get_or_calculate_risk(db, application_id)
 
 
 @router.get("/roadmap")

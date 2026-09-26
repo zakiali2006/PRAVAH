@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { SectionHead } from '../../../components/common/SectionHead';
 import { C } from '../../../constants/theme';
-import { FolderOpen, Upload, FileText, CheckCircle2, Shield, Cloud, Lock, Server, Link as LinkIcon, Loader2, AlertTriangle } from 'lucide-react';
+import { FolderOpen, Upload, FileText, CheckCircle2, Shield, Cloud, Lock, Server, Link as LinkIcon, Loader2, AlertTriangle, X } from 'lucide-react';
 import { Btn } from '../../../components/common/Btn';
 import { useMockApp } from '../../../contexts/MockAppContext';
 import { UploadDocumentModal } from '../components/UploadDocumentModal';
@@ -9,6 +9,7 @@ import { UploadDocumentModal } from '../components/UploadDocumentModal';
 export function DocumentDrive() {
   const { documents, addDocument } = useMockApp();
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedDocForView, setSelectedDocForView] = useState(null);
   const [isFetchingDigiLocker, setIsFetchingDigiLocker] = useState(false);
   const [digiLockerConnected, setDigiLockerConnected] = useState(false);
 
@@ -163,12 +164,23 @@ export function DocumentDrive() {
                         ) : (
                           <span className="text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Pending AI Review</span>
                         )}
+                        {doc.confidence !== undefined && (
+                          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                            {Math.round(doc.confidence * 100)}% Match
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 mt-4 sm:mt-0 pl-16 sm:pl-0">
                     <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-100">{doc.size || '1.2 MB'}</span>
-                    <Btn variant="outline" className="text-xs py-1.5 px-4">View</Btn>
+                    <Btn 
+                      variant="outline" 
+                      className="text-xs py-1.5 px-4"
+                      onClick={() => setSelectedDocForView(doc)}
+                    >
+                      View
+                    </Btn>
                   </div>
                 </div>
               ))}
@@ -191,6 +203,93 @@ export function DocumentDrive() {
           onClose={() => setShowUploadModal(false)} 
           onUpload={addDocument} 
         />
+      )}
+
+      {/* Verification Details Modal */}
+      {selectedDocForView && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white max-w-md w-full rounded-2xl p-6 shadow-2xl border border-slate-200 overflow-hidden relative">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900">{selectedDocForView.name || selectedDocForView.type}</h3>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">{selectedDocForView.id || 'DOC-VAULT'}</p>
+              </div>
+              <button 
+                onClick={() => setSelectedDocForView(null)} 
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="text-[10px] font-black uppercase text-slate-400 mb-1">OCR Verification Status</div>
+                <div className="flex items-center justify-between">
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full ${
+                    selectedDocForView.status === 'verified' ? 'bg-emerald-100 text-emerald-800' :
+                    selectedDocForView.status === 'ai_flagged' ? 'bg-red-100 text-red-800' :
+                    'bg-amber-100 text-amber-800'
+                  }`}>
+                    {selectedDocForView.status === 'verified' ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
+                    {selectedDocForView.status ? selectedDocForView.status.toUpperCase() : 'VERIFIED'}
+                  </span>
+                  {selectedDocForView.confidence && (
+                    <span className="text-xs font-extrabold text-slate-700">
+                      {Math.round(selectedDocForView.confidence * 100)}% Confidence
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {selectedDocForView.matches && selectedDocForView.matches.length > 0 && (
+                <div>
+                  <div className="text-[11px] font-bold text-slate-700 mb-1.5">Profile Matches:</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedDocForView.matches.map((m, idx) => (
+                      <span key={idx} className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <CheckCircle2 size={10} /> {m.replace(/_/g, ' ').toUpperCase()}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedDocForView.mismatches && selectedDocForView.mismatches.length > 0 && (
+                <div>
+                  <div className="text-[11px] font-bold text-red-700 mb-1.5">Mismatches / Attention Required:</div>
+                  <div className="space-y-1.5">
+                    {selectedDocForView.mismatches.map((m, idx) => (
+                      <div key={idx} className="text-[11px] bg-red-50 text-red-800 p-2 rounded border border-red-200">
+                        <span className="font-bold capitalize">{m.field.replace(/_/g, ' ')}:</span> {m.reason}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedDocForView.reasons && selectedDocForView.reasons.length > 0 && (
+                <div>
+                  <div className="text-[11px] font-bold text-slate-700 mb-1">Verification Remarks:</div>
+                  <ul className="text-xs text-slate-600 list-disc pl-4 space-y-0.5">
+                    {selectedDocForView.reasons.map((r, idx) => (
+                      <li key={idx}>{r}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => setSelectedDocForView(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

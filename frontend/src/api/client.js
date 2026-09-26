@@ -109,3 +109,13 @@ export const trackApplication = async (id) => {
   const response = await apiClient.get(`/applications/${id}/track`);
   return response.data;
 };
+
+export const getApplicationRisk = async (id) => {
+  const response = await apiClient.get(`/applications/${id}/risk`);
+  return response.data;
+};
+
+export const recalculateApplicationRisk = async (id) => {
+  const response = await apiClient.post(`/officer/applications/${id}/recalculate-risk`);
+  return response.data;
+};

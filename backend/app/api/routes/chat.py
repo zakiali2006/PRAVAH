@@ -43,6 +43,7 @@ def chat_assistant(
             db=db,
             user_id=current_user.id,
             question=clean_message,
+            application_id=request.application_id,
         )
 
         return success_response(
@@ -50,6 +51,20 @@ def chat_assistant(
             message="Query answered successfully",
         )
 
+    except PermissionError as perm_err:
+        logger.warning("Unauthorized application access attempt in chat: %s", perm_err)
+        return error_response(
+            ErrorCode.FORBIDDEN,
+            str(perm_err),
+            status_code=403,
+        )
+    except ValueError as val_err:
+        logger.warning("Resource not found in chat: %s", val_err)
+        return error_response(
+            ErrorCode.RESOURCE_NOT_FOUND,
+            str(val_err),
+            status_code=404,
+        )
     except Exception as exc:
         logger.error("Error in chat_assistant endpoint: %s", exc)
         return error_response(

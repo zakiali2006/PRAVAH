@@ -29,3 +29,9 @@ class Application(Base):
         cascade="all, delete",
         order_by="Stage.id",
     )
+    risk_score = relationship(
+        "ApplicationRiskScore",
+        back_populates="application",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
