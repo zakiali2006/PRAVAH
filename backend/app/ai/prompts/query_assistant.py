@@ -77,8 +77,16 @@ def format_copilot_prompt(
     Constructs the bounded prompt for the Application Copilot, combining verified
     application/profile/risk facts, untrusted document RAG context, and the user query.
     """
-    safe_facts = application_facts_text.strip() if application_facts_text else "NO APPLICATION FACTS AVAILABLE."
-    safe_docs = retrieved_chunks_text.strip() if retrieved_chunks_text else "NO MATCHING UPLOADED DOCUMENTS FOUND."
+    safe_facts = (
+        application_facts_text.strip()
+        if application_facts_text
+        else "NO APPLICATION FACTS AVAILABLE."
+    )
+    safe_docs = (
+        retrieved_chunks_text.strip()
+        if retrieved_chunks_text
+        else "NO MATCHING UPLOADED DOCUMENTS FOUND."
+    )
     safe_question = user_question.strip()
 
     return f"""{COPILOT_SYSTEM_PROMPT}

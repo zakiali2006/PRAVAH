@@ -18,6 +18,7 @@ from app.ai.rag_service import rag_service
 @pytest.fixture
 def copilot_test_setup(client):
     from app.tests.conftest import TestingSessionLocal
+
     db = TestingSessionLocal()
     try:
         user1 = User(

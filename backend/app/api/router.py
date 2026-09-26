@@ -29,6 +29,7 @@ api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 api_router.include_router(audit.router, prefix="/audit", tags=["Audit System"])
 
 from app.api.routes import services
+
 api_router.include_router(services.router, prefix="/services", tags=["Services"])
 
 from app.api.routes import applications, officer, business, chat, documents

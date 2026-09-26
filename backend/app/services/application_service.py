@@ -64,6 +64,7 @@ class ApplicationService:
         # Calculate initial risk score & triage
         try:
             from app.services.risk_scoring_service import risk_scoring_service
+
             risk_scoring_service.calculate_risk(db, app_id, persist=True)
         except Exception:
             pass
@@ -107,6 +108,7 @@ class ApplicationService:
         # Recalculate risk score upon submission
         try:
             from app.services.risk_scoring_service import risk_scoring_service
+
             risk_scoring_service.calculate_risk(db, application_id, persist=True)
         except Exception:
             pass

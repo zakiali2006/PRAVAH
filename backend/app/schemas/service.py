@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
+
 class ServiceBase(BaseModel):
     service_id: str
     name: str
@@ -9,14 +10,17 @@ class ServiceBase(BaseModel):
     fee: float
     status: str
 
+
 class ServiceCreate(ServiceBase):
     pass
+
 
 class ServiceUpdate(BaseModel):
     name: Optional[str] = None
     department: Optional[str] = None
     fee: Optional[float] = None
     status: Optional[str] = None
+
 
 class ServiceOut(ServiceBase):
     id: int

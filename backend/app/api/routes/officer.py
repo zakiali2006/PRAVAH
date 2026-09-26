@@ -49,6 +49,7 @@ def get_application_risk(
 ):
     try:
         from app.services.risk_scoring_service import risk_scoring_service
+
         return risk_scoring_service.get_or_calculate_risk(db, application_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -70,6 +71,7 @@ def recalculate_application_risk(
 ):
     try:
         from app.services.risk_scoring_service import risk_scoring_service
+
         return risk_scoring_service.calculate_risk(db, application_id, persist=True)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
