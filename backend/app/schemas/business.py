@@ -5,10 +5,16 @@ from typing import Optional, List
 # Factory Unit Schemas
 class FactoryUnitBase(BaseModel):
     unit_name: str
-    midc_plot_number: Optional[str] = None
-    location_district: str
-    investment_amount: Optional[int] = None
-    employment_count: Optional[int] = None
+    category: Optional[str] = None
+    operational_status: Optional[str] = None
+    midc_area: Optional[str] = None
+    taluka: Optional[str] = None
+    district: Optional[str] = None
+    plot_number: Optional[str] = None
+    survey_number: Optional[str] = None
+    power_sanctioned_kva: Optional[int] = None
+    water_demand_kl: Optional[int] = None
+    built_up_area_sqm: Optional[int] = None
 
 
 class FactoryUnitCreate(FactoryUnitBase):

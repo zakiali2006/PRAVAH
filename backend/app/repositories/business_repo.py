@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.repositories.base import BaseRepository
-from app.models.business import BusinessProfile
+from app.models.business import BusinessProfile, FactoryUnit
 from app.schemas.business import BusinessProfileCreate
 
 
@@ -11,4 +11,12 @@ class BusinessProfileRepository(BaseRepository[BusinessProfile]):
         )
 
 
+class FactoryUnitRepository(BaseRepository[FactoryUnit]):
+    def get_by_business(self, db: Session, business_id: int):
+        return (
+            db.query(FactoryUnit).filter(FactoryUnit.business_id == business_id).all()
+        )
+
+
 business_repo = BusinessProfileRepository(BusinessProfile)
+factory_unit_repo = FactoryUnitRepository(FactoryUnit)

@@ -1,7 +1,11 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from app.repositories.business_repo import business_repo
-from app.schemas.business import BusinessProfileCreate, BusinessProfileUpdate
+from app.repositories.business_repo import business_repo, factory_unit_repo
+from app.schemas.business import (
+    BusinessProfileCreate,
+    BusinessProfileUpdate,
+    FactoryUnitCreate,
+)
 from app.services.audit_service import audit_service
 
 
@@ -47,3 +51,34 @@ class BusinessProfileService:
             entity_id=str(profile.id),
         )
         return profile
+
+
+class FactoryUnitService:
+    @staticmethod
+    def get_units_by_user(db: Session, user_id: int):
+        profile = business_repo.get_by_user(db, user_id=user_id)
+        if not profile:
+            return []
+        return factory_unit_repo.get_by_business(db, business_id=profile.id)
+
+    @staticmethod
+    def create_unit(db: Session, unit_in: FactoryUnitCreate, user_id: int):
+        profile = business_repo.get_by_user(db, user_id=user_id)
+        if not profile:
+            raise HTTPException(
+                status_code=404,
+                detail="Business profile not found. Please setup profile first.",
+            )
+
+        unit_data = unit_in.dict()
+        unit_data["business_id"] = profile.id
+        unit = factory_unit_repo.create(db=db, obj_in=unit_data)
+
+        audit_service.log(
+            db,
+            actor_id=user_id,
+            action="CREATE_FACTORY_UNIT",
+            entity_type="factory_units",
+            entity_id=str(unit.id),
+        )
+        return unit
