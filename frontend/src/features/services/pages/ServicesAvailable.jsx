@@ -27,25 +27,29 @@ const DEPARTMENTS = [
 export function ServicesAvailable() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const [services, setServices] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const totalPages = 10;
-  const totalItems = 100; // 10 pages * 10 items
+  
+  const fetchServices = async () => {
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/services/active`);
+      if (res.ok) {
+        const data = await res.json();
+        setServices(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-  // Generate 10 items for the current page
-  const currentData = Array.from({ length: itemsPerPage }).map((_, index) => {
-    const srNo = (currentPage - 1) * itemsPerPage + index + 1;
-    // Pick departments and services somewhat predictably based on srNo
-    const deptObj = DEPARTMENTS[srNo % DEPARTMENTS.length];
-    const serviceName = DUMMY_SERVICES[index % DUMMY_SERVICES.length];
+  React.useEffect(() => {
+    fetchServices();
+  }, []);
 
-    return {
-      srNo,
-      department: deptObj.dept,
-      subDepartment: deptObj.sub,
-      serviceName: srNo <= 10 ? serviceName : `${serviceName} - Variant ${srNo}`
-    };
-  });
+  const totalItems = services.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const currentData = services.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -130,18 +134,22 @@ export function ServicesAvailable() {
               </tr>
             </thead>
             <tbody>
-              {currentData.map((row, idx) => (
+              {currentData.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="py-6 text-center text-gray-500">No active services found.</td>
+                </tr>
+              ) : currentData.map((row, idx) => (
                 <tr 
-                  key={row.srNo} 
+                  key={row.id} 
                   className={`border-b border-gray-100 hover:bg-gray-50 ${idx % 2 === 0 ? 'bg-[#f9f9f9]' : 'bg-white'}`}
                 >
-                  <td className="py-3 px-4">{row.srNo}</td>
+                  <td className="py-3 px-4">{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                   <td className="py-3 px-4">{row.department}</td>
-                  <td className="py-3 px-4">{row.subDepartment}</td>
-                  <td className="py-3 px-4 pr-12">{row.serviceName}</td>
+                  <td className="py-3 px-4">-</td>
+                  <td className="py-3 px-4 pr-12">{row.name}</td>
                   <td className="py-3 px-4 text-center">
                     <button 
-                      onClick={() => currentUser ? navigate('/app/apply') : navigate('/login')}
+                      onClick={() => currentUser ? navigate('/app/apply', { state: { serviceName: row.name, fee: row.fee } }) : navigate('/login')}
                       className="bg-[#198754] text-white px-3 py-1 text-xs rounded hover:bg-[#157347] transition-colors whitespace-nowrap shadow-sm"
                     >
                       Apply Now
@@ -156,7 +164,7 @@ export function ServicesAvailable() {
         {/* PAGINATION */}
         <div className="flex justify-between items-center mt-4 text-gray-600 text-sm">
           <div>
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {currentPage * itemsPerPage} of {totalItems} entries
+            Showing {totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
           </div>
           <div className="flex border border-gray-200 rounded">
             <button 
@@ -179,9 +187,9 @@ export function ServicesAvailable() {
               );
             })}
             <button 
-              className={`px-3 py-1.5 hover:bg-gray-50 ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700'}`}
+              className={`px-3 py-1.5 hover:bg-gray-50 ${currentPage === totalPages || totalPages === 0 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700'}`}
               onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || totalPages === 0}
             >
               Next
             </button>

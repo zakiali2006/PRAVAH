@@ -8,4 +8,5 @@ from app.models.stage import Stage
 from app.models.document import Document, DocumentType, ApplicationDocument
 from app.models.document_chunk import DocumentChunk
 from app.models.business import BusinessProfile, FactoryUnit
+from app.models.service import Service
 from app.models.risk import ApplicationRiskScore

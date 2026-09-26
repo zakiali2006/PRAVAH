@@ -21,6 +21,7 @@ from app.core.security import create_access_token
 def test_setup_db(client):
     """Provides a fresh database session via TestClient setup."""
     from app.tests.conftest import TestingSessionLocal
+
     db = TestingSessionLocal()
     try:
         # Create test users
@@ -92,7 +93,10 @@ def test_clean_application_low_risk(test_setup_db):
     assert result.risk_level == "LOW"
     assert result.triage_category == "FAST_TRACK"
     assert len(result.factors) == 0
-    assert "clean regulatory compliance" in result.summary.lower() or "fast_track" in result.summary.lower()
+    assert (
+        "clean regulatory compliance" in result.summary.lower()
+        or "fast_track" in result.summary.lower()
+    )
 
 
 def test_warning_document_increases_risk(test_setup_db):
@@ -124,7 +128,9 @@ def test_warning_document_increases_risk(test_setup_db):
     result = risk_scoring_service.calculate_risk(db, app.id, persist=True)
     assert result.score > 0.0
     assert result.triage_category == "DOCUMENT_REVIEW"
-    assert any(f.factor == "Document Verification" and f.impact == 15 for f in result.factors)
+    assert any(
+        f.factor == "Document Verification" and f.impact == 15 for f in result.factors
+    )
 
 
 def test_invalid_document_high_risk(test_setup_db):
@@ -150,7 +156,11 @@ def test_invalid_document_high_risk(test_setup_db):
         validation_reason="PAN mismatch detected",
         extracted_data={
             "mismatches": [
-                {"field": "pan_number", "extracted": "ZZZZZ9999Z", "expected": "AAACS1234F"}
+                {
+                    "field": "pan_number",
+                    "extracted": "ZZZZZ9999Z",
+                    "expected": "AAACS1234F",
+                }
             ]
         },
     )
@@ -190,7 +200,11 @@ def test_multiple_factors_accumulate_correctly(test_setup_db):
         extracted_data={
             "is_expired": True,
             "mismatches": [
-                {"field": "cin_number", "extracted": "L00000", "expected": "U29253MH2024PTC123456"}
+                {
+                    "field": "cin_number",
+                    "extracted": "L00000",
+                    "expected": "U29253MH2024PTC123456",
+                }
             ],
         },
     )

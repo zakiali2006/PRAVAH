@@ -28,9 +28,18 @@ def sample_business_profile():
 
 
 def test_normalize_company_name():
-    assert normalize_company_name("Sahyadri Precision Pvt. Ltd.") == "sahyadri precision pvt ltd"
-    assert normalize_company_name("Sahyadri Precision Private Limited") == "sahyadri precision pvt ltd"
-    assert normalize_company_name("Sahyadri Precision Pvt Ltd") == "sahyadri precision pvt ltd"
+    assert (
+        normalize_company_name("Sahyadri Precision Pvt. Ltd.")
+        == "sahyadri precision pvt ltd"
+    )
+    assert (
+        normalize_company_name("Sahyadri Precision Private Limited")
+        == "sahyadri precision pvt ltd"
+    )
+    assert (
+        normalize_company_name("Sahyadri Precision Pvt Ltd")
+        == "sahyadri precision pvt ltd"
+    )
     assert normalize_company_name("Acme Corporation") == "acme corp"
 
 

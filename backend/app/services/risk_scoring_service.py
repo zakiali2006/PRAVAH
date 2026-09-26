@@ -239,7 +239,11 @@ class RiskScoringService:
         # 6. Smart Triage category
         if score > 65.0:
             triage_category = "HIGH_RISK_REVIEW"
-        elif any(f["factor"] in ["Document Verification", "Profile Consistency", "Document Validity"] for f in factors):
+        elif any(
+            f["factor"]
+            in ["Document Verification", "Profile Consistency", "Document Validity"]
+            for f in factors
+        ):
             triage_category = "DOCUMENT_REVIEW"
         elif score <= 30.0 and len(factors) == 0:
             triage_category = "FAST_TRACK"
@@ -355,7 +359,9 @@ class RiskScoringService:
             if response.text and response.text.strip():
                 return response.text.strip()
         except Exception as exc:
-            logger.warning("Gemini risk summary generation failed (fallback used): %s", exc)
+            logger.warning(
+                "Gemini risk summary generation failed (fallback used): %s", exc
+            )
 
         return deterministic_text
 

@@ -3,13 +3,13 @@ import { Loader2, CheckCircle, Clock, AlertTriangle, ChevronRight, Filter, Shiel
 import { SectionHead } from "../../../components/common/SectionHead";
 import { Btn } from "../../../components/common/Btn";
 import { useApplications } from "../../../hooks/useApplications";
+import { ActionRequiredModal } from "../components/ActionRequiredModal";
 import { recalculateApplicationRisk } from "../../../api/client";
 
 export function OfficerQueue() {
   const { applications: queue, loading, updateStatus, refresh } = useApplications(true);
   const [selectedApp, setSelectedApp] = useState(null);
   const [processingState, setProcessingState] = useState(false);
-  const [actionRemarks, setActionRemarks] = useState("");
   const [recalculatingRisk, setRecalculatingRisk] = useState(false);
 
   const getStatusBadge = (status) => {
@@ -56,11 +56,6 @@ export function OfficerQueue() {
 
   const handleProcessClick = (app) => {
     setSelectedApp(app);
-    setActionRemarks("");
-  };
-
-  const handleCloseModal = () => {
-    setSelectedApp(null);
   };
 
   const handleRecalculateRisk = async () => {
@@ -82,7 +77,7 @@ export function OfficerQueue() {
     }
   };
 
-  const submitAction = async (status) => {
+  const submitAction = async (status, actionRemarks) => {
     if (!selectedApp) return;
     setProcessingState(true);
     try {
@@ -189,191 +184,14 @@ export function OfficerQueue() {
         </div>
       </div>
 
-      {/* Processing Modal */}
-      {selectedApp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
-                <ShieldCheck className="text-blue-600" /> Action Required: {selectedApp.id}
-              </h3>
-              <button onClick={handleCloseModal} className="text-slate-400 hover:text-slate-700 transition-colors">
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto">
-              {(() => {
-                const pendingStage = selectedApp.stages?.find(s => s.status === 'pending');
-                
-                return (
-                  <>
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="text-xs font-black uppercase text-slate-400 mb-1">Service Details</h4>
-                        <p className="font-bold text-slate-800 text-sm">{selectedApp.service_name}</p>
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-black uppercase text-slate-400 mb-1">Applicant</h4>
-                        <p className="font-bold text-slate-800 text-sm">{selectedApp.applicant_name}</p>
-                      </div>
-                    </div>
-
-                    {pendingStage && (
-                      <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-xl">
-                        <h4 className="text-xs font-black uppercase text-blue-800 mb-1">Current Pending Step</h4>
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
-                          <p className="font-bold text-slate-900">{pendingStage.name}</p>
-                        </div>
-                        <p className="text-sm text-slate-600 mt-1">{pendingStage.desc}</p>
-                      </div>
-                    )}
-
-                    {/* Explainable AI Risk Assessment & Smart Triage Card */}
-                    <div className="mt-6 p-4 rounded-xl border border-slate-200 bg-slate-50/80">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <ShieldAlert className={
-                            (selectedApp.risk_score?.risk_level === 'HIGH' || selectedApp.ai_score > 65)
-                              ? "text-red-600"
-                              : (selectedApp.risk_score?.risk_level === 'MEDIUM' || selectedApp.ai_score > 30)
-                              ? "text-amber-600"
-                              : "text-emerald-600"
-                          } size={18} />
-                          <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">
-                            AI Risk Triage Analysis
-                          </h4>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={handleRecalculateRisk}
-                            disabled={recalculatingRisk}
-                            title="Recalculate Risk Score"
-                            className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-blue-600 bg-white border border-slate-200 rounded-md transition-colors"
-                          >
-                            <RefreshCw size={11} className={recalculatingRisk ? "animate-spin text-blue-600" : ""} />
-                            {recalculatingRisk ? "Calculating..." : "Recalculate"}
-                          </button>
-                          <span className={`px-2 py-0.5 rounded text-xs font-black uppercase ${
-                            (selectedApp.risk_score?.risk_level === 'HIGH' || selectedApp.ai_score > 65)
-                              ? "bg-red-100 text-red-700 border border-red-200"
-                              : (selectedApp.risk_score?.risk_level === 'MEDIUM' || selectedApp.ai_score > 30)
-                              ? "bg-amber-100 text-amber-700 border border-amber-200"
-                              : "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                          }`}>
-                            {selectedApp.risk_score?.risk_level || (selectedApp.ai_score > 65 ? "HIGH" : selectedApp.ai_score > 30 ? "MEDIUM" : "LOW")} RISK ({Math.round(selectedApp.ai_score || 0)}/100)
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Summary */}
-                      <p className="text-xs text-slate-600 leading-relaxed font-medium bg-white p-2.5 rounded-lg border border-slate-200/80 mb-3">
-                        {selectedApp.risk_score?.summary || `Application evaluated with priority score of ${Math.round(selectedApp.ai_score || 0)}/100.`}
-                      </p>
-
-                      {/* Factors list */}
-                      {selectedApp.risk_score?.factors && selectedApp.risk_score.factors.length > 0 ? (
-                        <div className="space-y-1.5">
-                          <div className="text-[10px] font-black uppercase text-slate-400">Identified Risk Factors</div>
-                          {selectedApp.risk_score.factors.map((f, fIdx) => (
-                            <div key={fIdx} className="flex items-start justify-between gap-2 p-2 bg-white rounded-md border border-slate-100 text-xs">
-                              <div>
-                                <span className="font-bold text-slate-800">{f.factor}:</span>{" "}
-                                <span className="text-slate-600">{f.reason}</span>
-                              </div>
-                              <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-black bg-red-50 text-red-600 border border-red-100">
-                                +{f.impact} pts
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-100">
-                          <CheckCircle size={14} /> Zero high-risk compliance discrepancies detected across submitted documents.
-                        </div>
-                      )}
-                    </div>
-
-              <div className="mt-8">
-                <h4 className="text-sm font-bold text-slate-800 mb-3">Officer Remarks</h4>
-                <textarea 
-                  value={actionRemarks}
-                  onChange={(e) => setActionRemarks(e.target.value)}
-                  placeholder="Enter remarks for the investor..."
-                  className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#f99d1c] focus:border-transparent outline-none min-h-[100px] resize-none"
-                />
-              </div>
-
-                    <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-                      <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={18} />
-                      <p className="text-xs font-medium text-amber-800 leading-relaxed">
-                        You are about to change the status of this application. This action will immediately notify the investor and update their live tracking timeline. Please ensure remarks are clear.
-                      </p>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex flex-wrap items-center justify-end gap-3">
-              {(() => {
-                const pendingStage = selectedApp.stages?.find(s => s.status === 'pending');
-                let approveText = "Approve Application";
-                let approveAction = "approved";
-
-                if (pendingStage?.name === "Document Verification") {
-                  approveText = "Approve Documents";
-                  approveAction = "approve_documents";
-                } else if (pendingStage?.name === "Department Scrutiny") {
-                  approveText = "Complete Scrutiny";
-                  approveAction = "approve_scrutiny";
-                } else if (pendingStage?.name === "Final Approval") {
-                  approveText = "Grant Final Approval";
-                  approveAction = "approve_final";
-                }
-
-                return (
-                  <>
-                    <button 
-                      onClick={handleCloseModal}
-                      className="px-4 py-2 font-bold text-sm text-slate-600 hover:text-slate-900 transition-colors"
-                      disabled={processingState}
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      onClick={() => submitAction('clarification')}
-                      className="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg font-bold text-sm transition-colors shadow-sm disabled:opacity-50"
-                      disabled={processingState}
-                    >
-                      Request Clarification
-                    </button>
-                    <button 
-                      onClick={() => submitAction('rejected')}
-                      className="px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg font-bold text-sm transition-colors disabled:opacity-50"
-                      disabled={processingState}
-                    >
-                      Reject Application
-                    </button>
-                    <button 
-                      onClick={() => submitAction(approveAction)}
-                      className="px-6 py-2 bg-[#002a5c] text-white hover:bg-blue-900 rounded-lg font-bold text-sm transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
-                      disabled={processingState}
-                    >
-                      {processingState ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                      {approveText}
-                    </button>
-                  </>
-                );
-              })()}
-            </div>
-
-          </div>
-        </div>
-      )}
-
+      <ActionRequiredModal 
+        selectedApp={selectedApp}
+        onClose={() => setSelectedApp(null)}
+        onAction={submitAction}
+        processingState={processingState}
+        onRecalculateRisk={handleRecalculateRisk}
+        recalculatingRisk={recalculatingRisk}
+      />
     </div>
   );
 }

@@ -61,7 +61,9 @@ def extract_cin_from_text(text: Optional[str]) -> Optional[str]:
     """Finds Corporate Identification Number (CIN: 21 alphanumeric chars starting with L or U)."""
     if not text:
         return None
-    match = re.search(r"\b([LU][0-9]{5}[A-Z]{2}[0-9]{4}[A-Z]{3}[0-9]{6})\b", text.upper())
+    match = re.search(
+        r"\b([LU][0-9]{5}[A-Z]{2}[0-9]{4}[A-Z]{3}[0-9]{6})\b", text.upper()
+    )
     return match.group(1) if match else None
 
 
@@ -180,9 +182,9 @@ def validate_document_data(
     doc_pan = normalize_identifier(extracted_data.pan_number)
     # Fallback to checking document_number or raw text for PAN format
     if not doc_pan:
-        doc_pan = extract_pan_from_text(extracted_data.document_number) or extract_pan_from_text(
-            raw_text
-        )
+        doc_pan = extract_pan_from_text(
+            extracted_data.document_number
+        ) or extract_pan_from_text(raw_text)
 
     if expected_pan:
         if doc_pan:
@@ -219,9 +221,9 @@ def validate_document_data(
     # -------------------------------------------------------------------------
     doc_cin = normalize_identifier(extracted_data.cin_number)
     if not doc_cin:
-        doc_cin = extract_cin_from_text(extracted_data.document_number) or extract_cin_from_text(
-            raw_text
-        )
+        doc_cin = extract_cin_from_text(
+            extracted_data.document_number
+        ) or extract_cin_from_text(raw_text)
 
     if expected_cin:
         if doc_cin:
@@ -242,7 +244,9 @@ def validate_document_data(
                 status = ValidationStatus.INVALID
         elif "INCORPORATION" in (extracted_data.document_type or "").upper():
             # Incorporation certificates for Pvt Ltd should typically have CIN
-            reasons.append("Incorporation certificate does not show a clear CIN number.")
+            reasons.append(
+                "Incorporation certificate does not show a clear CIN number."
+            )
             if status != ValidationStatus.INVALID:
                 status = ValidationStatus.WARNING
 
@@ -258,7 +262,9 @@ def validate_document_data(
         ext_tokens = set(w for w in norm_ext_addr.split() if len(w) >= 4)
 
         overlap = exp_tokens.intersection(ext_tokens)
-        if len(overlap) >= 2 or (len(exp_tokens) > 0 and len(overlap) / len(exp_tokens) >= 0.4):
+        if len(overlap) >= 2 or (
+            len(exp_tokens) > 0 and len(overlap) / len(exp_tokens) >= 0.4
+        ):
             matches.append("address")
         elif len(exp_tokens) > 0 and len(overlap) == 0:
             mismatches.append(
@@ -269,7 +275,9 @@ def validate_document_data(
                     reason="Document address does not match registered business address locality.",
                 )
             )
-            reasons.append("Document address appears to differ from registered business address.")
+            reasons.append(
+                "Document address appears to differ from registered business address."
+            )
             if status != ValidationStatus.INVALID:
                 status = ValidationStatus.WARNING
 
@@ -293,7 +301,9 @@ def validate_document_data(
             else:
                 matches.append("valid_expiry")
         except ValueError:
-            reasons.append(f"Unrecognized expiry date format: {extracted_data.expiry_date}")
+            reasons.append(
+                f"Unrecognized expiry date format: {extracted_data.expiry_date}"
+            )
             if status != ValidationStatus.INVALID:
                 status = ValidationStatus.WARNING
 
@@ -335,7 +345,9 @@ def validate_document_data(
     else:
         final_confidence = max(0.90, name_confidence)
         if not reasons:
-            reasons.append("Document passed all automated verifications against business profile.")
+            reasons.append(
+                "Document passed all automated verifications against business profile."
+            )
 
     return ValidationResult(
         status=status,

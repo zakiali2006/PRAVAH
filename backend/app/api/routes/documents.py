@@ -248,7 +248,12 @@ def validate_document(
         try:
             from app.models.application import Application
             from app.services.risk_scoring_service import risk_scoring_service
-            user_apps = db.query(Application).filter(Application.user_id == doc.uploader_id).all()
+
+            user_apps = (
+                db.query(Application)
+                .filter(Application.user_id == doc.uploader_id)
+                .all()
+            )
             for u_app in user_apps:
                 risk_scoring_service.calculate_risk(db, u_app.id, persist=True)
         except Exception:
@@ -281,13 +286,18 @@ def get_validation_result(
         return error_response(ErrorCode.RESOURCE_NOT_FOUND, "Document not found", 404)
 
     user_role = (current_user.role or "").upper()
-    if doc.uploader_id != current_user.id and user_role not in ["OFFICER", "SYSTEM_ADMIN"]:
+    if doc.uploader_id != current_user.id and user_role not in [
+        "OFFICER",
+        "SYSTEM_ADMIN",
+    ]:
         return error_response(
             ErrorCode.FORBIDDEN, "Not authorized to access this document", 403
         )
 
     verification_meta = (
-        doc.extracted_data.get("verification") if isinstance(doc.extracted_data, dict) else {}
+        doc.extracted_data.get("verification")
+        if isinstance(doc.extracted_data, dict)
+        else {}
     ) or {}
     fields_meta = (
         doc.extracted_data.get("fields") if isinstance(doc.extracted_data, dict) else {}
@@ -296,10 +306,15 @@ def get_validation_result(
     data = {
         "document_id": doc.id,
         "status": doc.validation_status or doc.status,
-        "confidence": verification_meta.get("confidence", 1.0 if (doc.validation_status or doc.status) == "VALID" else 0.7),
+        "confidence": verification_meta.get(
+            "confidence",
+            1.0 if (doc.validation_status or doc.status) == "VALID" else 0.7,
+        ),
         "matches": verification_meta.get("matches", []),
         "mismatches": verification_meta.get("mismatches", []),
-        "reasons": verification_meta.get("reasons", [doc.validation_reason] if doc.validation_reason else []),
+        "reasons": verification_meta.get(
+            "reasons", [doc.validation_reason] if doc.validation_reason else []
+        ),
         "extracted_data": fields_meta,
     }
     return success_response(data, "Validation status retrieved")

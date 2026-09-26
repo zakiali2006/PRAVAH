@@ -222,8 +222,10 @@ class RAGService:
         if app.user_id != user_id:
             user = db.query(User).filter(User.id == user_id).first()
             user_role = (
-                getattr(user.role, "name", None) or str(user.role or "")
-            ).upper() if user else ""
+                (getattr(user.role, "name", None) or str(user.role or "")).upper()
+                if user
+                else ""
+            )
             if user_role not in ["OFFICER", "SYSTEM_ADMIN"]:
                 raise PermissionError(
                     f"Not authorized to access application '{application_id}'."
@@ -284,9 +286,7 @@ class RAGService:
             .all()
         )
         if not docs:
-            docs = (
-                db.query(Document).filter(Document.uploader_id == app.user_id).all()
-            )
+            docs = db.query(Document).filter(Document.uploader_id == app.user_id).all()
 
         if docs:
             facts.append("- Uploaded Documents & Verification Telemetry:")
@@ -308,6 +308,7 @@ class RAGService:
         # Risk Assessment & Triage
         try:
             from app.services.risk_scoring_service import risk_scoring_service
+
             risk_data = risk_scoring_service.get_or_calculate_risk(db, app.id)
             facts.append("- AI Risk Scoring & Smart Triage Assessment:")
             facts.append(f"  * Score: {risk_data.score:.1f}/100")
@@ -328,7 +329,9 @@ class RAGService:
         Parses structured form suggestions if generated in the format:
         [SUGGESTION: field_name -> suggested_value | Reason: reason]
         """
-        pattern = r"\[SUGGESTION:\s*([^->|]+)\s*->\s*([^|]+)\s*\|\s*Reason:\s*([^\]]+)\]"
+        pattern = (
+            r"\[SUGGESTION:\s*([^->|]+)\s*->\s*([^|]+)\s*\|\s*Reason:\s*([^\]]+)\]"
+        )
         matches = re.findall(pattern, text, re.IGNORECASE)
         suggestions = []
         for m in matches:
