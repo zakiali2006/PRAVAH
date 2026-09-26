@@ -1,7 +1,11 @@
 import React from "react";
 import { C } from "../../constants/theme";
 
-export function Btn({ children, onClick, variant = "primary", className = "", type }) {
+export interface BtnProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "primary" | "navy" | "outline" | "ghost";
+}
+
+export function Btn({ children, onClick, variant = "primary", className = "", type = "button", disabled = false, ...props }: BtnProps) {
   const styles = {
     primary: { background: C.saffron, color: C.white, border: `1px solid ${C.saffron}` },
     navy: { background: C.navy, color: C.white, border: `1px solid ${C.navy}` },
@@ -13,8 +17,10 @@ export function Btn({ children, onClick, variant = "primary", className = "", ty
     <button
       type={type}
       onClick={onClick}
-      className={`px-5 py-2.5 rounded font-semibold text-sm transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-offset-2 ${className}`}
+      disabled={disabled}
+      className={`px-5 py-2.5 flex items-center justify-center rounded font-semibold text-sm transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
       style={{ ...styles, outlineColor: C.navy }}
+      {...props}
     >
       {children}
     </button>
