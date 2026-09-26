@@ -87,13 +87,13 @@ export function OfficerDashboard() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <div className="w-full bg-gray-200 rounded-full h-2 max-w-[100px]">
-                            <div className={`h-2 rounded-full ${item.ai_score > 3 ? 'bg-red-500' : item.ai_score > 2 ? 'bg-orange-500' : 'bg-blue-500'}`} style={{ width: `${((item.ai_score || 0) / 5) * 100}%` }}></div>
+                            <div className={`h-2 rounded-full ${item.ai_score > 65 ? 'bg-red-500' : item.ai_score > 30 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, Math.max(0, item.ai_score || 0))}%` }}></div>
                           </div>
                           <span className="font-semibold text-gray-700">{item.ai_score ? item.ai_score.toFixed(1) : 'N/A'}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        {item.ai_score > 3 ? (
+                        {item.ai_score > 65 ? (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
                             <AlertTriangle size={14} /> Breach Risk
                           </span>
