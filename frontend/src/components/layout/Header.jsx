@@ -96,7 +96,7 @@ export function Header({ a11y, setA11y }) {
                   {currentUser.email}
                 </div>
                 <Btn variant="ghost" onClick={() => go(currentUser.role === 'INVESTOR' ? 'app/dashboard' : currentUser.role === 'OFFICER' ? 'officer/dashboard' : 'policy/dashboard')} className="is-link">{t.nav.dashboard}</Btn>
-                <Btn onClick={handleSignOut} className="is-link">Sign Out</Btn>
+                <Btn onClick={handleSignOut} className="is-link">{t("Sign Out")}</Btn>
               </>
             ) : (
               <>
@@ -128,7 +128,7 @@ export function Header({ a11y, setA11y }) {
                       borderBottom: isActive ? `3px solid ${C.saffron}` : "3px solid transparent",
                     }}
                   >
-                    {item.label} <ChevronDown size={14} />
+                    {t(item.label) || item.label} <ChevronDown size={14} />
                   </button>
                   <div className="absolute left-0 top-full hidden group-hover:block w-48 bg-white shadow-xl border border-slate-200 z-50 rounded-b overflow-hidden">
                     {item.subLinks.map(sub => (
@@ -142,7 +142,7 @@ export function Header({ a11y, setA11y }) {
                           borderLeft: currentPath === sub.path ? `3px solid ${C.saffron}` : '3px solid transparent'
                         }}
                       >
-                        {sub.label}
+                        {t(sub.label) || sub.label}
                       </button>
                     ))}
                   </div>
@@ -160,7 +160,7 @@ export function Header({ a11y, setA11y }) {
                   borderBottom: currentPath === item.path ? `3px solid ${C.saffron}` : "3px solid transparent",
                 }}
               >
-                {item.label}
+                {t(item.label) || item.label}
               </button>
             );
           })}
@@ -177,7 +177,7 @@ export function Header({ a11y, setA11y }) {
             if (link.isHeader) {
               return (
                 <div key={i} className="px-5 pt-4 pb-1 text-xs font-bold uppercase tracking-wider" style={{ color: '#88a4c3', borderTop: i !== 0 ? `1px solid ${C.navySoft}` : 'none' }}>
-                  {link.label}
+                  {t(link.label) || link.label}
                 </div>
               )
             }
@@ -191,7 +191,7 @@ export function Header({ a11y, setA11y }) {
                   borderTop: !link.isSub && i !== 0 ? `1px solid ${C.navySoft}` : 'none',
                 }}
               >
-                {link.label} <ChevronRight size={16} />
+                {t(link.label) || link.label} <ChevronRight size={16} />
               </button>
             )
           })}
@@ -202,7 +202,7 @@ export function Header({ a11y, setA11y }) {
                   {currentUser.email}
                 </div>
                 <Btn variant="ghost" onClick={() => go(currentUser.role === 'INVESTOR' ? 'app/dashboard' : currentUser.role === 'OFFICER' ? 'officer/dashboard' : 'policy/dashboard')} className="w-full">{t.nav.dashboard}</Btn>
-                <Btn onClick={handleSignOut} className="w-full">Sign Out</Btn>
+                <Btn onClick={handleSignOut} className="w-full">{t("Sign Out")}</Btn>
               </>
             ) : (
               <>

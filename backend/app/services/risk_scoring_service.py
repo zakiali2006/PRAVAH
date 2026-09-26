@@ -345,7 +345,7 @@ class RiskScoringService:
                 f"Risk Factors: {factors}\n"
             )
             response = client.models.generate_content(
-                model=settings.AI_MODEL_TEXT or "gemini-1.5-flash",
+                model=settings.AI_MODEL_TEXT or "gemini-3.8-flash",
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     temperature=0.0,

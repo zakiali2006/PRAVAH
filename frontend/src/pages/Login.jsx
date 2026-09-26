@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from '../contexts/TranslationContext';
 import { C, inputCls, inputStyle } from '../constants/theme';
 import { Btn } from '../components/common/Btn';
 import { LogIn, Building2, Briefcase, ShieldCheck } from 'lucide-react';
@@ -16,6 +17,7 @@ export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
+  const { t, lang } = useTranslation();
 
   const roleConfigs = [
     { id: ROLES.INVESTOR, label: 'Investor', email: 'investor@demo.com', icon: <Building2 size={18} className="mr-2" /> },
@@ -64,8 +66,12 @@ export function Login() {
           <div className="w-12 h-12 rounded flex items-center justify-center mb-3" style={{ background: C.navy }}>
             <LogIn size={24} color={C.white} />
           </div>
-          <h2 className="text-2xl font-bold" style={{ color: C.navyDeep }}>PRAVAH Secure Login</h2>
-          <p className="text-sm mt-1" style={{ color: C.slate }}>Select your role to continue</p>
+          <h2 className="text-2xl font-bold" style={{ color: C.navyDeep }}>
+            {lang === "mr" ? "प्रवाह सुरक्षित लॉगिन" : lang === "hi" ? "प्रवाह सुरक्षित लॉगिन" : "PRAVAH Secure Login"}
+          </h2>
+          <p className="text-sm mt-1" style={{ color: C.slate }}>
+            {lang === "mr" ? "पुढे जाण्यासाठी आपली भूमिका निवडा" : lang === "hi" ? "जारी रखने के लिए अपनी भूमिका चुनें" : "Select your role to continue"}
+          </p>
         </div>
 
         {/* Role Selection Tabs */}
@@ -82,7 +88,7 @@ export function Login() {
               }`}
             >
               {role.icon}
-              {role.label}
+              {t(role.label, role.label)}
             </button>
           ))}
         </div>
@@ -91,7 +97,9 @@ export function Login() {
 
         <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
           <div>
-            <label className="block text-sm font-medium mb-1">Email Address</label>
+            <label className="block text-sm font-medium mb-1">
+              {lang === "mr" ? "ईमेल पत्ता" : lang === "hi" ? "ईमेल पता" : "Email Address"}
+            </label>
             <input
               type="email"
               required
@@ -102,7 +110,9 @@ export function Login() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
+            <label className="block text-sm font-medium mb-1">
+              {lang === "mr" ? "पासवर्ड" : lang === "hi" ? "पासवर्ड" : "Password"}
+            </label>
             <input
               type="password"
               required
@@ -114,12 +124,17 @@ export function Login() {
             />
           </div>
           <Btn className="w-full mt-4" disabled={loading}>
-            {loading ? "Logging in..." : `Login as ${roleConfigs.find(r => r.id === activeRole)?.label}`}
+            {loading 
+              ? (lang === "mr" ? "लॉगिन होत आहे..." : lang === "hi" ? "लॉगिन हो रहा है..." : "Logging in...") 
+              : `${t("Login", "Login")} (${t(roleConfigs.find(r => r.id === activeRole)?.label)})`}
           </Btn>
         </form>
 
         <div className="mt-6 text-center text-sm" style={{ color: C.slate }}>
-          Don't have an account? <Link to="/register" className="font-semibold underline" style={{ color: C.saffron }}>Register here</Link>
+          {lang === "mr" ? "खाते नाही का? " : lang === "hi" ? "खाता नहीं है? " : "Don't have an account? "}
+          <Link to="/register" className="font-semibold underline" style={{ color: C.saffron }}>
+            {lang === "mr" ? "येथे नोंदणी करा" : lang === "hi" ? "यहाँ पंजीकरण करें" : "Register here"}
+          </Link>
         </div>
       </div>
     </div>

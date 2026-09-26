@@ -163,6 +163,29 @@ def get_document(
     )
 
 
+@router.get("/{document_id}/download")
+def download_document(
+    document_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        return error_response(ErrorCode.RESOURCE_NOT_FOUND, "Document not found", 404)
+    user_role = (getattr(current_user.role, "name", None) or str(current_user.role or "")).upper()
+    if doc.uploader_id != current_user.id and user_role not in ["OFFICER", "SYSTEM_ADMIN", "POLICY_ADMIN"]:
+        return error_response(ErrorCode.FORBIDDEN, "Not authorized to download this document", 403)
+
+    from fastapi.responses import FileResponse
+    from app.services.storage_service import storage_service
+    abs_path = storage_service.get_file_path(doc.file_path)
+    import os
+    if not os.path.exists(abs_path):
+        return error_response(ErrorCode.RESOURCE_NOT_FOUND, "Physical file not found on server", 404)
+
+    return FileResponse(abs_path, filename=doc.original_name, media_type=doc.mime_type)
+
+
 @router.delete("/{document_id}", response_model=dict)
 def delete_document(
     document_id: int,

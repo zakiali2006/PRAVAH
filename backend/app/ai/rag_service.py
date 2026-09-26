@@ -32,7 +32,7 @@ class RAGService:
 
     def __init__(self):
         self.model_name = (
-            settings.AI_MODEL_TEXT if settings.AI_MODEL_TEXT else "gemini-1.5-flash"
+            settings.AI_MODEL_TEXT if settings.AI_MODEL_TEXT else "gemini-3.8-flash"
         )
 
     def answer_query(

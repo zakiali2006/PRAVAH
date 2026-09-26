@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Play, Check, Bell, FileText, ChevronRight, Landmark, FileCheck, Calculator, MessageSquare, Bot, Headphones } from "lucide-react";
+import { Search, Play, Check, Bell, FileText, ChevronRight, Landmark, FileCheck, Calculator, MessageSquare, Bot, Headphones, Clock, Smartphone, Download } from "lucide-react";
 import { SectionHead } from "../../../components/common/SectionHead";
 import { Btn } from "../../../components/common/Btn";
 import { C, inputCls, inputStyle } from "../../../constants/theme";
-import { T } from "../../../constants/translations";
 import { useCountUp } from "../../../hooks/useCountUp";
 import { useTranslation } from "../../../contexts/TranslationContext";
 import { useAuth } from "../../../contexts/AuthContext";
-const FEATURES = [
+
+const DEFAULT_FEATURES = [
   { icon: FileCheck, title: "Single-window approvals", body: "One application, one set of documents. The portal routes your file to every department that has to sign off on it." },
   { icon: Clock, title: "Desk-level tracking", body: "See which officer is holding your file, for how long, and what the statutory timeline says it should take." },
   { icon: Calculator, title: "Incentive calculator", body: "Enter your investment and location to see the capital subsidy, SGST refund and duty exemptions you qualify for." },
@@ -17,12 +17,12 @@ const FEATURES = [
   { icon: Headphones, title: "Investor handholding", body: "A relationship manager from first enquiry through land, power, water and commissioning." },
 ];
 
-import { Clock, Smartphone, Download } from "lucide-react"; // moved up
-
 function Hero() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+
+  const quickChips = t.quickChips || ["Factory plan approval", "Consent to establish", "Fire NOC"];
 
   return (
     <div style={{ background: C.navyDeep }} className="relative overflow-hidden">
@@ -45,7 +45,7 @@ function Hero() {
           
           <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
             <span style={{ color: "#8FB4D4" }}>{t.quick}:</span>
-            {["Factory plan approval", "Consent to establish", "Fire NOC"].map((q) => (
+            {quickChips.map((q) => (
               <button key={q} onClick={() => { navigate("/services"); window.scrollTo(0,0); }} className="px-3 py-1 rounded-full transition-colors" style={{ background: "rgba(255,255,255,0.1)", color: C.white }}>
                 {q}
               </button>
@@ -62,7 +62,7 @@ function Hero() {
               </div>
             </div>
             <div className="absolute bottom-4 left-4 right-4 text-white text-sm font-semibold text-shadow">
-              See how PRAVAH accelerated the mega EV facility in Pune.
+              {t.videoCaption || "See how PRAVAH accelerated the mega EV facility in Pune."}
             </div>
           </div>
         </div>
@@ -88,33 +88,40 @@ function Stat({ s, run }) {
 const STAT_ICONS = [FileCheck, Landmark, FileText, Check];
 
 function StatsBand() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState([]);
 
   useEffect(() => {
     // Simulate network delay for dashboard stats
     setTimeout(() => {
       const mockStats = [
-        { value: 168, label: "Services integrated", suffix: "+" },
-        { value: 42, label: "Departments onboarded", suffix: "" },
-        { value: 1.2, label: "Files cleared this year", suffix: "M" },
-        { value: 94, label: "Applications within SLA", suffix: "%" }
+        { value: 168, suffix: "+" },
+        { value: 42, suffix: "" },
+        { value: 1.2, suffix: "M" },
+        { value: 94, suffix: "%" }
       ];
-      const mappedStats = mockStats.map((s, i) => ({
-        ...s,
-        icon: STAT_ICONS[i] || FileCheck
-      }));
-      setStats(mappedStats);
-    }, 800);
+      setStats(mockStats);
+    }, 400);
   }, []);
+
+  const defaultLabels = ["Services integrated", "Departments onboarded", "Files cleared this year", "Applications within SLA"];
 
   return (
     <div style={{ background: C.saffron, borderBottom: `4px solid ${C.navy}` }} className="px-4 py-8 relative z-20 shadow-lg">
       <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-6 min-h-[100px]">
         {stats.length > 0 ? stats.map((s, i) => (
-          <Stat key={i} s={s} run={true} />
+          <Stat 
+            key={i} 
+            s={{
+              ...s,
+              icon: STAT_ICONS[i] || FileCheck,
+              label: t.stats?.[i]?.label || defaultLabels[i]
+            }} 
+            run={true} 
+          />
         )) : (
           <div className="col-span-4 text-center text-white/50 text-sm flex justify-center items-center h-full">
-            Loading statistics...
+            {t.statsLoading || "Loading statistics..."}
           </div>
         )}
       </div>
@@ -123,26 +130,32 @@ function StatsBand() {
 }
 
 function Features() {
+  const { t } = useTranslation();
+  const featureList = t.features?.list || DEFAULT_FEATURES;
+
   return (
     <div className="px-4 py-20" style={{ background: C.bg }}>
       <div className="max-w-7xl mx-auto">
         <div className="text-center flex flex-col items-center mb-12">
           <SectionHead
-            eyebrow="Portal features"
-            title="Everything an investor needs"
-            sub="We've rebuilt the clearance process around the applicant, not the departments."
+            eyebrow={t.features?.eyebrow || "Portal features"}
+            title={t.features?.title || "Everything an investor needs"}
+            sub={t.features?.sub || "We've rebuilt the clearance process around the applicant, not the departments."}
           />
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {FEATURES.map((f, i) => (
-            <div key={i} className="p-6 rounded-lg transition-transform hover:-translate-y-1 shadow-sm" style={{ background: C.white, border: `1px solid ${C.line}` }}>
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style={{ background: C.navySoft }}>
-                <f.icon size={22} color={C.white} />
+          {featureList.map((f, i) => {
+            const Icon = DEFAULT_FEATURES[i]?.icon || FileCheck;
+            return (
+              <div key={i} className="p-6 rounded-lg transition-transform hover:-translate-y-1 shadow-sm" style={{ background: C.white, border: `1px solid ${C.line}` }}>
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style={{ background: C.navySoft }}>
+                  <Icon size={22} color={C.white} />
+                </div>
+                <h3 className="font-bold text-lg mb-2" style={{ color: C.navyDeep }}>{f.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: C.slate }}>{f.body}</p>
               </div>
-              <h3 className="font-bold text-lg mb-2" style={{ color: C.navyDeep }}>{f.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ color: C.slate }}>{f.body}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
@@ -150,12 +163,14 @@ function Features() {
 }
 
 function WhyMaharashtra() {
-  const points = [
+  const { t } = useTranslation();
+  const points = t.whyMaha?.points || [
     { title: "$400B Economy", desc: "India's largest state economy, contributing 15% to national GDP." },
     { title: "Power Surplus", desc: "Uninterrupted industrial power supply with a growing green energy mix." },
     { title: "Connectivity", desc: "Four international airports and the nation's premier container port at JNPT." },
     { title: "Talent Pool", desc: "Highest number of technical and vocational graduates in the country." }
   ];
+
   return (
     <div className="px-4 py-20">
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
@@ -164,16 +179,16 @@ function WhyMaharashtra() {
             <img src="https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&q=80" alt="Mumbai skyline" className="object-cover w-full h-full" />
             <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${C.navyDeep}, transparent)` }} />
             <div className="absolute bottom-6 left-6 right-6">
-              <div className="text-xl font-bold text-white mb-2">Magnetic Maharashtra</div>
-              <div className="text-sm text-white opacity-80">The engine of India's growth story.</div>
+              <div className="text-xl font-bold text-white mb-2">{t.whyMaha?.bannerTitle || "Magnetic Maharashtra"}</div>
+              <div className="text-sm text-white opacity-80">{t.whyMaha?.bannerSub || "The engine of India's growth story."}</div>
             </div>
           </div>
         </div>
         <div className="lg:w-1/2">
           <SectionHead
-            eyebrow="The ecosystem"
-            title="Why set up in Maharashtra?"
-            sub="Beyond ease of doing business, the state offers mature industrial infrastructure and an unmatched domestic market."
+            eyebrow={t.whyMaha?.eyebrow || "The ecosystem"}
+            title={t.whyMaha?.title || "Why set up in Maharashtra?"}
+            sub={t.whyMaha?.sub || "Beyond ease of doing business, the state offers mature industrial infrastructure and an unmatched domestic market."}
           />
           <div className="grid sm:grid-cols-2 gap-6 mt-8">
             {points.map((p, i) => (
@@ -189,7 +204,9 @@ function WhyMaharashtra() {
             ))}
           </div>
           <div className="mt-8 pl-7">
-            <Btn variant="outline" className="flex items-center gap-2">Read the Industrial Policy 2019 <ChevronRight size={16} /></Btn>
+            <Btn variant="outline" className="flex items-center gap-2">
+              {t.whyMaha?.policyBtn || "Read the Industrial Policy 2019"} <ChevronRight size={16} />
+            </Btn>
           </div>
         </div>
       </div>
@@ -198,21 +215,23 @@ function WhyMaharashtra() {
 }
 
 function AppDownload() {
+  const { t } = useTranslation();
+
   return (
     <div className="px-4 py-16" style={{ background: C.white, borderTop: `1px solid ${C.line}` }}>
       <div className="max-w-6xl mx-auto rounded-3xl overflow-hidden shadow-xl" style={{ background: C.navyDeep, color: C.white }}>
         <div className="flex flex-col md:flex-row items-stretch">
           <div className="p-8 md:p-12 lg:p-16 md:w-2/3 flex flex-col justify-center">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-6 self-start" style={{ background: "rgba(255,255,255,0.1)", color: C.saffron }}>
-              <Smartphone size={16} /> <span className="text-sm font-bold tracking-wider uppercase">Mobile Experience</span>
+              <Smartphone size={16} /> <span className="text-sm font-bold tracking-wider uppercase">{t.app?.badge || "Mobile Experience"}</span>
             </div>
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4">Download the PRAVAH App</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold mb-4">{t.app?.title || "Download the PRAVAH App"}</h2>
             <p className="text-lg opacity-80 leading-relaxed mb-8 max-w-xl">
-              Take your business approvals on the go. Track applications, respond to queries, and receive instant push notifications from the palm of your hand.
+              {t.app?.sub || "Take your business approvals on the go. Track applications, respond to queries, and receive instant push notifications from the palm of your hand."}
             </p>
             <a href="https://drive.google.com/drive/folders/1qe27m8CwFfpyJY3UWpmwOdo4HrDWKCFc?usp=sharing" target="_blank" rel="noopener noreferrer" className="self-start">
               <div className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold shadow-lg transition-transform hover:-translate-y-1" style={{ background: C.saffron, color: C.white }}>
-                <Download size={20} /> Download APK
+                <Download size={20} /> {t.app?.btn || "Download APK"}
               </div>
             </a>
           </div>
@@ -224,7 +243,7 @@ function AppDownload() {
                <div className="w-full h-full rounded-xl flex flex-col items-center justify-center p-4 relative overflow-hidden" style={{ background: C.navyDeep }}>
                  <div className="absolute inset-0 opacity-20" style={{ background: `linear-gradient(135deg, ${C.saffron} 0%, transparent 100%)` }}></div>
                  <Landmark size={48} color={C.white} className="mb-4 relative z-10" />
-                 <div className="text-white font-black text-xl tracking-tight relative z-10">PRAVAH <span style={{ color: C.saffron }}>2.0</span></div>
+                 <div className="text-white font-black text-xl tracking-tight relative z-10">{t.brand || "PRAVAH"} <span style={{ color: C.saffron }}>2.0</span></div>
                </div>
              </div>
           </div>
@@ -235,21 +254,23 @@ function AppDownload() {
 }
 
 function Notices() {
-  const notices = [
+  const { t } = useTranslation();
+  const notices = t.notices?.list || [
     "Extension of deadline for filing PSI 2019 claims for FY 25-26",
     "Revised checklist for MPCB Consent to Establish in D+ zones",
     "Scheduled maintenance: MSEDCL integration offline on 12 Sep, 2 AM - 4 AM"
   ];
+
   return (
     <div style={{ background: C.navyDeep, borderTop: `1px solid ${C.navySoft}` }} className="px-4 py-12 text-white">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
         <div className="md:w-1/3">
           <div className="flex items-center gap-2 mb-4 text-saffron">
             <Bell size={20} color={C.saffron} />
-            <h3 className="font-bold text-lg">Notifications & Circulars</h3>
+            <h3 className="font-bold text-lg">{t.notices?.title || "Notifications & Circulars"}</h3>
           </div>
-          <p className="text-sm leading-relaxed opacity-80 mb-6">Stay updated with the latest policy changes, system updates and departmental orders.</p>
-          <Btn variant="primary">View all circulars</Btn>
+          <p className="text-sm leading-relaxed opacity-80 mb-6">{t.notices?.sub || "Stay updated with the latest policy changes, system updates and departmental orders."}</p>
+          <Btn variant="primary">{t.notices?.btn || "View all circulars"}</Btn>
         </div>
         <div className="md:w-2/3 grid gap-3">
           {notices.map((n, i) => (

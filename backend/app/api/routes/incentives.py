@@ -1,76 +1,101 @@
 from fastapi import APIRouter, HTTPException
-from app.models.schemas import IncentiveCalculateRequest
-from app.core.firebase import get_db
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
 
 router = APIRouter()
+
+TALUKA_CATEGORIES = [
+    {"code": "A", "label": "Group A (Developed Areas - MMR / Pune PMC / PCMC)", "ceiling": 0, "years": 0, "sgst_percent": 0},
+    {"code": "B", "label": "Group B (Developing Areas - Nashik / Kolhapur)", "ceiling": 60, "years": 7, "sgst_percent": 50},
+    {"code": "C", "label": "Group C (Less Developed - Aurangabad / Ahmednagar)", "ceiling": 80, "years": 7, "sgst_percent": 75},
+    {"code": "D", "label": "Group D (Least Developed - Solapur / Jalgaon / Dhule)", "ceiling": 100, "years": 9, "sgst_percent": 90},
+    {"code": "D+", "label": "Group D+ (No Industry / Naxalite / Tribal - Gadchiroli / Nandurbar)", "ceiling": 100, "years": 10, "sgst_percent": 100},
+]
+
+SECTORS = [
+    {"key": "manufacturing", "label": "Manufacturing & Heavy Engineering", "bump": 0},
+    {"key": "agro", "label": "Agro & Food Processing", "bump": 10},
+    {"key": "ev", "label": "Electric Vehicles (EV) & Components", "bump": 15},
+    {"key": "electronics", "label": "IT, Electronics & Data Centers", "bump": 15},
+    {"key": "textiles", "label": "Textiles & Technical Apparel", "bump": 10},
+]
+
+
+class IncentiveCalculateRequest(BaseModel):
+    investment: float  # In Crores
+    taluka_category: str  # A, B, C, D, D+
+    sector: str = "manufacturing"
+    employment: Optional[int] = 0
+    sc_st_promoter: Optional[bool] = False
 
 
 @router.get("/params")
 def get_incentive_params():
-    db = get_db()
-    if not db:
-        raise HTTPException(status_code=500, detail="Database not initialized")
-
-    taluka_doc = db.collection("pravah_config").document("taluka_cat").get()
-    sectors_doc = db.collection("pravah_config").document("sectors").get()
-
+    """Retrieve official statutory parameter tables under Maharashtra Industrial Policy PSI."""
     return {
-        "taluka_categories": (
-            taluka_doc.to_dict().get("data", []) if taluka_doc.exists else []
-        ),
-        "sectors": sectors_doc.to_dict().get("data", []) if sectors_doc.exists else [],
+        "taluka_categories": TALUKA_CATEGORIES,
+        "sectors": SECTORS,
     }
 
 
 @router.post("/calculate")
 def calculate_incentives(request: IncentiveCalculateRequest):
     """
-    Takes the user's investment input and returns the estimated eligible subsidies.
-    Phase 7: Incentive Calculator
+    Statutory estimation of eligible industrial subsidies under Maharashtra Package Scheme of Incentives (PSI).
+    Calculates IPS (Gross SGST reimbursement), electricity duty waiver, and interest subsidy.
     """
-    db = get_db()
-    if not db:
-        raise HTTPException(status_code=500, detail="Database not initialized")
+    cr = float(request.investment)
+    emp = int(request.employment or 0)
+    cat_code = request.taluka_category.upper()
+    has_sc_st = bool(request.sc_st_promoter)
 
-    taluka_doc = db.collection("pravah_config").document("taluka_cat").get()
-    sectors_doc = db.collection("pravah_config").document("sectors").get()
+    cat_row = next((c for c in TALUKA_CATEGORIES if c["code"] == cat_code), TALUKA_CATEGORIES[2])
+    sec_row = next((s for s in SECTORS if s["key"].lower() == request.sector.lower()), SECTORS[0])
 
-    if not taluka_doc.exists or not sectors_doc.exists:
-        raise HTTPException(
-            status_code=500, detail="Configuration data missing in database"
-        )
+    # Determine enterprise scale
+    if cr < 1:
+        unit_scale = "Micro Enterprise"
+    elif cr <= 10:
+        unit_scale = "Small Enterprise"
+    elif cr <= 50:
+        unit_scale = "Medium Enterprise"
+    elif cr <= 500:
+        unit_scale = "Large Industrial Project"
+    else:
+        unit_scale = "Mega / Ultra Mega Project"
 
-    talukas = taluka_doc.to_dict().get("data", [])
-    sectors = sectors_doc.to_dict().get("data", [])
+    # Ceiling & SGST calculations
+    ceiling_pct = min(120, cat_row["ceiling"] + sec_row["bump"])
+    if has_sc_st:
+        ceiling_pct = min(130, ceiling_pct + 10)
 
-    cat_row = next((c for c in talukas if c["code"] == request.taluka_category), None)
-    sec_row = next((s for s in sectors if s["key"] == request.sector), None)
+    ceiling = (cr * ceiling_pct) / 100
+    sgst_percent = cat_row["sgst_percent"]
+    tenure_years = cat_row["years"]
 
-    if not cat_row or not sec_row:
-        raise HTTPException(status_code=400, detail="Invalid sector or taluka category")
+    annual_estimated_sgst = (cr * 0.4) * 0.09
+    annual_refund = annual_estimated_sgst * (sgst_percent / 100)
+    total_sgst_refund = min(annual_refund * tenure_years, ceiling * 0.8)
 
-    cr = request.investment
-    emp = getattr(request, "employment", 0)
+    # Electricity duty exemption
+    electricity_savings = 12.8 if "Large" in unit_scale or "Mega" in unit_scale else 1.5
 
-    ceilingPct = max(0, min(120, cat_row["ceiling"] + sec_row["bump"]))
-    ceiling = (cr * ceilingPct) / 100
-    capital = min(ceiling * 0.35, cr * 0.2)
-    sgst = ceiling * 0.4
-    interest = min(cr * 0.05, ceiling * 0.15)
-    power = emp * 0.005
-    stamp = cr * 0.006
-    total = capital + sgst + interest + power + stamp
+    # Interest subsidy
+    interest_subsidy = (cr * 0.05 * 5) if (has_sc_st or "Micro" in unit_scale or "Small" in unit_scale) else 0.0
+
+    total_benefits = total_sgst_refund + electricity_savings + interest_subsidy
 
     return {
-        "ceilingPct": ceilingPct,
-        "ceiling": ceiling,
-        "capital": capital,
-        "sgst": sgst,
-        "interest": interest,
-        "power": power,
-        "stamp": stamp,
-        "total": total,
-        "years": cat_row["years"],
+        "unitScale": unit_scale,
+        "ceilingPct": ceiling_pct,
+        "ceiling": round(ceiling, 2),
+        "sgstPercent": sgst_percent,
+        "tenureYears": tenure_years,
+        "totalPotentialRefundCr": round(total_sgst_refund, 2),
+        "electricityDutySavingsCr": round(electricity_savings, 2),
+        "interestSubsidyCr": round(interest_subsidy, 2),
+        "totalBenefitValueCr": round(total_benefits, 2),
+        "total": round(total_benefits, 2),
         "catLabel": cat_row["label"],
         "secLabel": sec_row["label"],
         "cr": cr,

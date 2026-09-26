@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Bot, X, Send, Loader2, FileText, AlertCircle, Sparkles, Copy, Check, ChevronDown } from "lucide-react";
 import api from "../../api/axios";
+import { useTranslation } from "../../contexts/TranslationContext";
 
 export function ChatBot() {
+  const { lang, t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [applications, setApplications] = useState([]);
   const [selectedAppId, setSelectedAppId] = useState("");
@@ -339,7 +341,11 @@ export function ChatBot() {
         className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full font-semibold text-sm transition-all shadow-[0_8px_20px_rgba(15,23,42,0.6)] bg-slate-900 text-white border border-slate-700/80 hover:bg-slate-800 hover:scale-105 active:scale-95"
       >
         {open ? <X size={18} /> : <Bot size={18} />}
-        {!open && <span className="hidden sm:inline">Ask PRAVAH</span>}
+        {!open && (
+          <span className="hidden sm:inline">
+            {lang === "mr" ? "प्रवाहला विचारा" : lang === "hi" ? "प्रवाह से पूछें" : "Ask PRAVAH"}
+          </span>
+        )}
       </button>
     </>
   );

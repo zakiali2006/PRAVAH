@@ -76,7 +76,7 @@ export function AuthenticatedLayout({ a11y, setA11y }) {
                       activeSub ? "bg-slate-800 text-white" : "hover:bg-slate-800 hover:text-white text-slate-400"
                     }`}
                   >
-                    <span>{item.label}</span>
+                    <span>{t(item.label) || item.label}</span>
                     <ChevronRight size={14} className={`transition-transform ${isOpen ? "rotate-90" : ""}`} />
                   </button>
                   
@@ -99,7 +99,7 @@ export function AuthenticatedLayout({ a11y, setA11y }) {
                                   isSubActive ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:text-white hover:bg-slate-800/50"
                                 }`}
                               >
-                                {sub.label}
+                                {t(sub.label) || sub.label}
                               </button>
                             );
                           })}
@@ -119,7 +119,7 @@ export function AuthenticatedLayout({ a11y, setA11y }) {
                   isRootActive ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"
                 }`}
               >
-                {item.label}
+                {t(item.label) || item.label}
               </button>
             );
           })}
@@ -127,7 +127,7 @@ export function AuthenticatedLayout({ a11y, setA11y }) {
 
         {/* Sidebar Footer */}
         <div className="p-4 bg-slate-950 border-t border-slate-800 text-xs text-slate-500">
-          Govt of Maharashtra &copy; 2026
+          {t.sidebarFooter || "Govt of Maharashtra © 2026"}
         </div>
       </aside>
 
@@ -145,7 +145,7 @@ export function AuthenticatedLayout({ a11y, setA11y }) {
             </button>
             <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-md">
               <Landmark size={14} className="text-blue-600" />
-              Government of Maharashtra
+              {t.govt || "Government of Maharashtra"}
             </div>
           </div>
 
@@ -155,7 +155,7 @@ export function AuthenticatedLayout({ a11y, setA11y }) {
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600" />
               <input 
                 type="text" 
-                placeholder="Search..." 
+                placeholder={t.searchPhShort || "Search..."} 
                 className="pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm w-48 focus:w-64 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
             </div>
@@ -164,7 +164,7 @@ export function AuthenticatedLayout({ a11y, setA11y }) {
 
             {/* A11y */}
             <div className="hidden sm:block">
-              <AccessibilityBar a11y={a11y} setA11y={setA11y} />
+              <AccessibilityBar a11y={a11y} setA11y={setA11y} darkText={true} />
             </div>
 
             {/* Profile */}
@@ -184,7 +184,7 @@ export function AuthenticatedLayout({ a11y, setA11y }) {
                 <button 
                   onClick={handleSignOut}
                   className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-1"
-                  title="Sign Out"
+                  title={t("Sign Out")}
                 >
                   <LogOut size={16} />
                 </button>
@@ -241,7 +241,7 @@ export function AuthenticatedLayout({ a11y, setA11y }) {
                           activeSub ? "bg-slate-800 text-white" : "text-slate-300"
                         }`}
                       >
-                        <span>{item.label}</span>
+                        <span>{t(item.label) || item.label}</span>
                         <ChevronRight size={14} className={`transition-transform ${isOpen ? "rotate-90" : ""}`} />
                       </button>
                       
@@ -264,7 +264,7 @@ export function AuthenticatedLayout({ a11y, setA11y }) {
                                       isSubActive ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:text-white"
                                     }`}
                                   >
-                                    {sub.label}
+                                    {t(sub.label) || sub.label}
                                   </button>
                                 );
                               })}
@@ -284,7 +284,7 @@ export function AuthenticatedLayout({ a11y, setA11y }) {
                       isRootActive ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"
                     }`}
                   >
-                    {item.label}
+                    {t(item.label) || item.label}
                   </button>
                 );
               })}

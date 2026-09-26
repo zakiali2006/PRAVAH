@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import Generator, Optional
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
@@ -11,6 +11,7 @@ from app.models.user import User
 from app.repositories.user_repository import user_repo
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"/api/auth/swagger-login")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl=f"/api/auth/swagger-login", auto_error=False)
 
 
 def get_current_user(
@@ -30,6 +31,23 @@ def get_current_user(
     if not user:
         raise UnauthorizedException(message="User not found")
     return user
+
+
+def get_current_user_optional(
+    db: Session = Depends(get_db), token: Optional[str] = Depends(oauth2_scheme_optional)
+) -> Optional[User]:
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            return None
+        return user_repo.get(db, id=int(user_id))
+    except Exception:
+        return None
 
 
 def get_current_active_user(

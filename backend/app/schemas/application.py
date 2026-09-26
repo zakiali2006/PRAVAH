@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Any, Dict
 from datetime import datetime
 from app.schemas.risk import RiskAssessmentResponse
 
@@ -27,12 +27,21 @@ class ApplicationBase(BaseModel):
     is_draft: bool = True
     urgency: str = "normal"
     ai_score: float = 0.0
+    fee_amount: Optional[float] = 0.0
+    service_code: Optional[str] = None
+    factory_unit_id: Optional[int] = None
+    caf_data: Optional[Dict[str, Any]] = None
 
 
 class ApplicationCreate(BaseModel):
     service_name: str
     applicant_name: str
     business_id: Optional[int] = None
+    factory_unit_id: Optional[int] = None
+    service_code: Optional[str] = None
+    fee_amount: Optional[float] = 0.0
+    caf_data: Optional[Dict[str, Any]] = None
+    status: Optional[str] = "draft"
 
 
 class ApplicationStatusUpdate(BaseModel):
@@ -44,6 +53,7 @@ class ApplicationResponse(ApplicationBase):
     id: str
     user_id: int
     business_id: Optional[int] = None
+    factory_unit_id: Optional[int] = None
     assigned_officer_id: Optional[int] = None
     submitted_at: Optional[datetime] = None
     created_at: datetime

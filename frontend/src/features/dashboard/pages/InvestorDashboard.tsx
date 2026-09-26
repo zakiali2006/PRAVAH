@@ -71,21 +71,23 @@ export const InvestorDashboard = () => {
               </div>
               <div>
                 <h2 className="text-slate-900 font-bold text-base flex items-center gap-2">
-                  AI Next-Best Action
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-600 text-white shadow-sm tracking-wide">High Priority</span>
+                  {t.dash?.aiBanner?.title || "AI Next-Best Action"}
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-600 text-white shadow-sm tracking-wide">
+                    {t.dash?.aiBanner?.priority || "High Priority"}
+                  </span>
                 </h2>
               </div>
             </div>
           </div>
           <p className="text-slate-600 text-sm leading-relaxed max-w-4xl pl-13">
-            Your <strong className="text-slate-900">Consent to Establish (MPCB)</strong> application is at 84% SLA risk due to a pending document query. Submit the required "Environmental Audit Report" within the next 48 hours to avoid an automatic breach.
+            {t.dash?.aiBanner?.text || 'Your Consent to Establish (MPCB) application is at 84% SLA risk due to a pending document query. Submit the required "Environmental Audit Report" within the next 48 hours to avoid an automatic breach.'}
           </p>
           <div className="flex items-center gap-3 justify-end pt-2 border-t border-slate-100">
             <button className="px-4 py-2 bg-white text-slate-700 font-semibold text-sm rounded-lg border border-slate-300 hover:bg-slate-50 transition-colors shadow-sm">
-              View Roadmap
+              {t.dash?.aiBanner?.roadmapBtn || "View Roadmap"}
             </button>
             <button onClick={() => navigate('/app/applications')} className="px-4 py-2 bg-blue-600 text-white font-semibold text-sm rounded-lg shadow-sm hover:bg-blue-700 transition-colors">
-              Resolve Query
+              {t.dash?.aiBanner?.resolveBtn || "Resolve Query"}
             </button>
           </div>
         </div>
@@ -100,21 +102,25 @@ export const InvestorDashboard = () => {
           {/* Filters */}
           <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 flex flex-wrap sm:flex-nowrap items-end gap-2 shrink-0">
             <div>
-              <label className="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wide px-1">From</label>
+              <label className="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wide px-1">
+                {t.dash?.filters?.from || "From"}
+              </label>
               <div className="relative">
                 <CalendarIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input type="text" defaultValue="Jan 1, 2016" className="w-32 pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-blue-500" />
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wide px-1">To</label>
+              <label className="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wide px-1">
+                {t.dash?.filters?.to || "To"}
+              </label>
               <div className="relative">
                 <CalendarIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input type="text" defaultValue="Sep 11, 2026" className="w-32 pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-blue-500" />
               </div>
             </div>
             <button className="px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-blue-700 h-[30px]">
-              Apply
+              {t.dash?.filters?.apply || "Apply"}
             </button>
           </div>
         </div>
@@ -195,7 +201,7 @@ export const InvestorDashboard = () => {
               {/* Main Line Chart */}
               <div className="bg-white border border-slate-200 rounded-b-xl rounded-tr-xl p-4 shadow-sm col-span-2 xl:col-span-1 flex flex-col">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold text-slate-800 text-sm">Services Performance Trend</h3>
+                  <h3 className="font-bold text-slate-800 text-sm">{t.dash?.trend || "Services Performance Trend"}</h3>
                 </div>
                 <div className="flex-1 min-h-[220px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
