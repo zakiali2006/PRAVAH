@@ -27,7 +27,17 @@ class FactoryUnit(Base, BaseMixin):
         Integer, ForeignKey("business_profiles.id", ondelete="CASCADE"), nullable=False
     )
     unit_name = Column(String, nullable=False)
-    midc_plot_number = Column(String, nullable=True)
-    location_district = Column(String, nullable=False)
-    investment_amount = Column(Integer, nullable=True)  # in INR
-    employment_count = Column(Integer, nullable=True)
+    category = Column(String, nullable=True)
+    operational_status = Column(String, nullable=True)
+
+    # Location
+    midc_area = Column(String, nullable=True)
+    taluka = Column(String, nullable=True)
+    district = Column(String, nullable=True)
+    plot_number = Column(String, nullable=True)
+    survey_number = Column(String, nullable=True)
+
+    # Technical
+    power_sanctioned_kva = Column(Integer, nullable=True)
+    water_demand_kl = Column(Integer, nullable=True)
+    built_up_area_sqm = Column(Integer, nullable=True)

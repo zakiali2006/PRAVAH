@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from typing import List
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.user import User
@@ -7,8 +8,10 @@ from app.schemas.business import (
     BusinessProfileCreate,
     BusinessProfileUpdate,
     BusinessProfileResponse,
+    FactoryUnitCreate,
+    FactoryUnitResponse,
 )
-from app.services.business_service import BusinessProfileService
+from app.services.business_service import BusinessProfileService, FactoryUnitService
 
 router = APIRouter()
 
@@ -38,3 +41,20 @@ def update_business_profile(
     current_user: User = Depends(get_current_user),
 ):
     return BusinessProfileService.update_profile(db, profile_in, current_user.id)
+
+
+@router.get("/units", response_model=List[FactoryUnitResponse])
+def get_factory_units(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return FactoryUnitService.get_units_by_user(db, current_user.id)
+
+
+@router.post("/units", response_model=FactoryUnitResponse)
+def create_factory_unit(
+    unit_in: FactoryUnitCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return FactoryUnitService.create_unit(db, unit_in, current_user.id)

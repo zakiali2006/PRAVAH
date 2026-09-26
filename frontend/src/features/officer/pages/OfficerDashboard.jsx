@@ -1,35 +1,19 @@
 import React, { useState } from "react";
 import { Loader2, AlertTriangle, CheckCircle2, XCircle, Clock, ShieldAlert, Cpu } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { SectionHead } from "../../../components/common/SectionHead";
 import { Btn } from "../../../components/common/Btn";
 import { useApplications } from "../../../hooks/useApplications";
-import { ActionRequiredModal } from "../components/ActionRequiredModal";
 
 export function OfficerDashboard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("workload");
-  const { applications: queue, loading: queueLoading, updateStatus } = useApplications(true);
+  const { applications: queue, loading: queueLoading } = useApplications(true);
   
-  const [selectedApp, setSelectedApp] = useState(null);
-  const [processingState, setProcessingState] = useState(false);
-
   const MOCK_FRAUD = [
     { id: "MTR/2026/112", applicant: "Unknown Shell Corp", issue: "Duplicate PAN Card detected across 3 distinct entities", confidence: 99.8 },
     { id: "MTR/2026/156", applicant: "Global Traders Inc", issue: "Geotag metadata on property deed does not match declared coordinates", confidence: 87.5 },
   ];
-
-  const submitAction = async (status, remarks) => {
-    if (!selectedApp) return;
-    setProcessingState(true);
-    try {
-      await updateStatus(selectedApp.id, status, remarks || `Application marked as ${status}`);
-      setSelectedApp(null);
-    } catch (error) {
-      console.error("Failed to update status", error);
-      alert("Failed to update status. Please try again.");
-    } finally {
-      setProcessingState(false);
-    }
-  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 relative mb-20">
@@ -104,7 +88,7 @@ export function OfficerDashboard() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Btn variant={i === 0 ? "navy" : "outline"} className={i===0 ? "bg-red-600 hover:bg-red-700 border-transparent text-white" : ""} onClick={() => setSelectedApp(item)}>
+                        <Btn variant={i === 0 ? "navy" : "outline"} className={i===0 ? "bg-red-600 hover:bg-red-700 border-transparent text-white" : ""} onClick={() => navigate("/officer/queue")}>
                           Process
                         </Btn>
                       </td>
@@ -150,13 +134,6 @@ export function OfficerDashboard() {
           </div>
         </div>
       )}
-
-      <ActionRequiredModal 
-        selectedApp={selectedApp}
-        onClose={() => setSelectedApp(null)}
-        onAction={submitAction}
-        processingState={processingState}
-      />
     </div>
   );
 }

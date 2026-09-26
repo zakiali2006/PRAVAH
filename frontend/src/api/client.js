@@ -119,3 +119,18 @@ export const recalculateApplicationRisk = async (id) => {
   const response = await apiClient.post(`/officer/applications/${id}/recalculate-risk`);
   return response.data;
 };
+
+export const getFactoryUnits = async () => {
+  const response = await apiClient.get('/business-profile/units');
+  return response.data;
+};
+
+export const createFactoryUnit = async (data) => {
+  const response = await apiClient.post('/business-profile/units', data);
+  return response.data;
+};
+
+export const getMyDocuments = async () => {
+  const response = await apiClient.get('/documents');
+  return response.data;
+};

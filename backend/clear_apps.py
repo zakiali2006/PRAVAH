@@ -1,11 +1,20 @@
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
+from app.core.database import SessionLocal
+from sqlalchemy import text
 
-engine = create_engine("postgresql://user:password@localhost:5432/pravah_db")
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+def clear_apps():
+    db = SessionLocal()
+    try:
+        db.execute(text("DELETE FROM tracking_stages;"))
+        db.execute(text("DELETE FROM application_risk_scores;"))
+        db.execute(text("DELETE FROM application_documents;"))
+        db.execute(text("DELETE FROM applications;"))
+        db.commit()
+        print("Deleted all applications and all associated records.")
+    except Exception as e:
+        print(f"Error: {e}")
+        db.rollback()
+    finally:
+        db.close()
 
-db = SessionLocal()
-db.execute(text("TRUNCATE applications CASCADE"))
-db.commit()
-db.close()
-print("All applications deleted via cascade!")
+if __name__ == "__main__":
+    clear_apps()

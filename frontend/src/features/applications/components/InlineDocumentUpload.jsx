@@ -1,13 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { UploadCloud, CheckCircle2, XCircle, Loader2, FileText, Server, Search } from 'lucide-react';
-import { uploadDocumentAPI, validateDocumentAPI } from '../../../api/client';
+import { uploadDocumentAPI, validateDocumentAPI, getMyDocuments } from '../../../api/client';
 import { C } from '../../../constants/theme';
-
-const VAULT_DOCS = [
-  { id: 'v1', name: 'DigiLocker PAN Card', date: '10 Aug 2026', valid: true },
-  { id: 'v2', name: 'MCA Incorporation Certificate', date: '14 Sep 2026', valid: true },
-  { id: 'v3', name: 'GST Registration Certificate', date: '01 Jan 2026', valid: true }
-];
 
 export function InlineDocumentUpload({ onValidationComplete }) {
   const [activeTab, setActiveTab] = useState('upload'); // 'upload' or 'vault'
@@ -15,6 +9,28 @@ export function InlineDocumentUpload({ onValidationComplete }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const fileInputRef = useRef(null);
+
+  const [vaultDocs, setVaultDocs] = useState([]);
+  const [vaultLoading, setVaultLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (activeTab === 'vault') {
+      fetchDocuments();
+    }
+  }, [activeTab]);
+
+  const fetchDocuments = async () => {
+    setVaultLoading(true);
+    try {
+      const res = await getMyDocuments();
+      setVaultDocs(res.data || []);
+    } catch (err) {
+      console.error("Failed to fetch documents from vault", err);
+    } finally {
+      setVaultLoading(false);
+    }
+  };
 
   const handleFileChange = async (e) => {
     const selectedFile = e.target.files[0];
@@ -51,14 +67,18 @@ export function InlineDocumentUpload({ onValidationComplete }) {
   };
 
   const handleVaultSelect = (doc) => {
-    setFile({ name: doc.name });
+    setFile({ name: doc.original_name || doc.filename });
     setResult({
-      success: true,
-      proof: "Verified from PRAVAH Central Vault"
+      success: doc.validation_status === 'VALID' || doc.status === 'VALID',
+      proof: doc.validation_status === 'VALID' || doc.status === 'VALID' ? "Verified from PRAVAH Central Vault" : "Document is not marked as VALID in vault"
     });
-    if (onValidationComplete) onValidationComplete(true);
+    if (onValidationComplete) onValidationComplete(doc.validation_status === 'VALID' || doc.status === 'VALID');
     setActiveTab('upload'); // Switch back to main view to show success
   };
+
+  const filteredDocs = vaultDocs.filter(doc => 
+    (doc.original_name || doc.filename).toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="w-full">
@@ -156,30 +176,50 @@ export function InlineDocumentUpload({ onValidationComplete }) {
         <div className="border border-gray-200 rounded bg-gray-50 p-4">
           <div className="flex items-center gap-2 mb-4 bg-white border border-gray-300 rounded px-3 py-1.5 shadow-sm">
             <Search size={16} className="text-gray-400" />
-            <input type="text" placeholder="Search your vault..." className="w-full text-sm outline-none" />
+            <input 
+              type="text" 
+              placeholder="Search your vault..." 
+              className="w-full text-sm outline-none" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-            {VAULT_DOCS.map(doc => (
-              <div 
-                key={doc.id} 
-                onClick={() => handleVaultSelect(doc)}
-                className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded hover:border-blue-400 hover:shadow-sm cursor-pointer transition-all group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="bg-blue-50 p-2 rounded text-blue-600">
-                    <FileText size={18} />
+          {vaultLoading ? (
+             <div className="flex justify-center p-4"><Loader2 className="animate-spin text-blue-600" /></div>
+          ) : filteredDocs.length === 0 ? (
+             <div className="text-center p-4 text-sm text-gray-500">No documents found in vault.</div>
+          ) : (
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+              {filteredDocs.map(doc => {
+                const isValid = doc.validation_status === 'VALID' || doc.status === 'VALID';
+                return (
+                <div 
+                  key={doc.id} 
+                  onClick={() => handleVaultSelect(doc)}
+                  className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded hover:border-blue-400 hover:shadow-sm cursor-pointer transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-50 p-2 rounded text-blue-600">
+                      <FileText size={18} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800 group-hover:text-blue-700">{doc.original_name || doc.filename}</p>
+                      <p className="text-xs text-gray-500">Added: {new Date(doc.created_at).toLocaleDateString()}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800 group-hover:text-blue-700">{doc.name}</p>
-                    <p className="text-xs text-gray-500">Added: {doc.date}</p>
-                  </div>
+                  {isValid ? (
+                    <div className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded border border-green-100 flex items-center gap-1">
+                      <CheckCircle2 size={12} /> Verified
+                    </div>
+                  ) : (
+                    <div className="text-xs font-bold text-gray-600 bg-gray-50 px-2 py-1 rounded border border-gray-200 flex items-center gap-1">
+                      Unverified
+                    </div>
+                  )}
                 </div>
-                <div className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded border border-green-100 flex items-center gap-1">
-                  <CheckCircle2 size={12} /> Verified
-                </div>
-              </div>
-            ))}
-          </div>
+              )})}
+            </div>
+          )}
         </div>
       )}
     </div>
