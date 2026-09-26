@@ -51,6 +51,18 @@ import { AuditLogs } from "../features/dashboard/pages/AuditLogs";
 import { FraudRadar } from "../features/officer/pages/FraudRadar";
 import { Feedback } from "../features/dashboard/pages/Feedback";
 
+// Policy Admin Pages
+import { PolicyDashboard } from "../features/policy/pages/PolicyDashboard";
+import { ManageServices } from "../features/policy/pages/ManageServices";
+import { ConfigureWorkflows } from "../features/policy/pages/ConfigureWorkflows";
+import { 
+  BottleneckAnalytics, 
+  DistrictAnalysis, 
+  SectorAnalysis, 
+  DepartmentAnalysis, 
+  RegulatoryImpact 
+} from "../features/policy/pages/AnalyticsStubs";
+
 function PublicLayout({ a11y, setA11y }) {
   const location = useLocation();
   return (
@@ -144,12 +156,14 @@ function AppRoutes() {
                 <Outlet />
               </RoleGuard>
             }>
-              <Route path="dashboard" element={<UnderConstruction title="Policy Dashboard" />} />
-              <Route path="bottlenecks" element={<UnderConstruction title="Bottleneck Analytics" />} />
-              <Route path="districts" element={<UnderConstruction title="District Analysis" />} />
-              <Route path="sectors" element={<UnderConstruction title="Sector Analysis" />} />
-              <Route path="departments" element={<UnderConstruction title="Department Analysis" />} />
-              <Route path="regulatory" element={<UnderConstruction title="Regulatory Impact" />} />
+              <Route path="dashboard" element={<PolicyDashboard />} />
+              <Route path="services" element={<ManageServices />} />
+              <Route path="workflows" element={<ConfigureWorkflows />} />
+              <Route path="bottlenecks" element={<BottleneckAnalytics />} />
+              <Route path="districts" element={<DistrictAnalysis />} />
+              <Route path="sectors" element={<SectorAnalysis />} />
+              <Route path="departments" element={<DepartmentAnalysis />} />
+              <Route path="regulatory" element={<RegulatoryImpact />} />
             </Route>
           </Route>
 
