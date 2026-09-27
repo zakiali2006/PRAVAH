@@ -53,6 +53,7 @@ import { PublicConsultations } from "../features/home/pages/PublicConsultations"
 import { AuditLogs } from "../features/dashboard/pages/AuditLogs";
 import { FraudRadar } from "../features/officer/pages/FraudRadar";
 import { Feedback } from "../features/dashboard/pages/Feedback";
+import { RiskAlerts } from "../features/dashboard/pages/RiskAlerts";
 
 // Policy Admin Pages
 import { PolicyDashboard } from "../features/policy/pages/PolicyDashboard";
@@ -93,7 +94,7 @@ function AppRoutes() {
     document.documentElement.style.fontSize = fs;
   }, [a11y.font]);
 
-  const a11yClass = `${a11y.invert ? "invert hue-rotate-180" : ""} ${a11y.links ? "underline-links" : ""}`;
+  const a11yClass = `${a11y.invert ? "a11y-high-contrast" : ""} ${a11y.links ? "a11y-highlight-links" : ""}`;
 
   return (
     <BrowserRouter>
@@ -136,7 +137,7 @@ function AppRoutes() {
               <Route path="audit" element={<AuditLogs />} />
               <Route path="feedback" element={<Feedback />} />
               <Route path="documents" element={<DocumentDrive />} />
-              <Route path="risk" element={<UnderConstruction title="Risk Alerts" />} />
+              <Route path="risk" element={<RiskAlerts />} />
             </Route>
 
             {/* Officer Routes */}
@@ -146,6 +147,7 @@ function AppRoutes() {
               </RoleGuard>
             }>
               <Route path="dashboard" element={<OfficerDashboard />} />
+              <Route path="applications/*" element={<UnderConstruction title="Application Processing" />} />
               <Route path="documents" element={<DocumentReview />} />
               <Route path="fraud" element={<FraudRadar alerts={INITIAL_FRAUD_ALERTS} />} />
               <Route path="queue" element={<OfficerQueue />} />

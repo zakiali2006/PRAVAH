@@ -117,7 +117,7 @@ export function OfficerDashboard() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Btn variant={i === 0 ? "navy" : "outline"} onClick={() => navigate(`/officer/applications/${item.id}`)}>
+                        <Btn variant={i === 0 ? "navy" : "outline"} onClick={() => navigate(`/officer/queue?processId=${encodeURIComponent(item.id)}`)}>
                           Process
                         </Btn>
                       </td>

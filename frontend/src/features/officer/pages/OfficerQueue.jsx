@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Loader2, CheckCircle, Clock, AlertTriangle, ChevronRight, Filter, ShieldCheck, X, ShieldAlert, Sparkles, RefreshCw } from "lucide-react";
 import { SectionHead } from "../../../components/common/SectionHead";
 import { Btn } from "../../../components/common/Btn";
@@ -11,6 +12,19 @@ export function OfficerQueue() {
   const [selectedApp, setSelectedApp] = useState(null);
   const [processingState, setProcessingState] = useState(false);
   const [recalculatingRisk, setRecalculatingRisk] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const processId = searchParams.get('processId');
+    if (processId && queue.length > 0) {
+      const appToProcess = queue.find(a => a.id === processId);
+      if (appToProcess && !selectedApp) {
+        setSelectedApp(appToProcess);
+      }
+    }
+  }, [location.search, queue, selectedApp]);
 
   const getStatusBadge = (status) => {
     const s = status ? status.toLowerCase() : 'unknown';
@@ -83,6 +97,12 @@ export function OfficerQueue() {
     try {
       await updateStatus(selectedApp.id, status, actionRemarks || `Application marked as ${status}`);
       setSelectedApp(null);
+      
+      // Clear the query parameter after processing
+      const searchParams = new URLSearchParams(location.search);
+      if (searchParams.has('processId')) {
+        navigate('/officer/queue', { replace: true });
+      }
     } catch (error) {
       console.error("Failed to update status", error);
       alert("Failed to update status. Please try again.");
@@ -186,7 +206,13 @@ export function OfficerQueue() {
 
       <ActionRequiredModal 
         selectedApp={selectedApp}
-        onClose={() => setSelectedApp(null)}
+        onClose={() => {
+          setSelectedApp(null);
+          const searchParams = new URLSearchParams(location.search);
+          if (searchParams.has('processId')) {
+            navigate('/officer/queue', { replace: true });
+          }
+        }}
         onAction={submitAction}
         processingState={processingState}
         onRecalculateRisk={handleRecalculateRisk}

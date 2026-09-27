@@ -5,8 +5,10 @@ import { FolderOpen, Upload, FileText, CheckCircle2, Shield, Cloud, Lock, Server
 import { Btn } from '../../../components/common/Btn';
 import { useMockApp } from '../../../contexts/MockAppContext';
 import { UploadDocumentModal } from '../components/UploadDocumentModal';
+import { useTranslation } from '../../../contexts/TranslationContext';
 
 export function DocumentDrive() {
+  const { t } = useTranslation();
   const { addDocument } = useMockApp(); // Keeping addDocument just in case other parts of the app rely on it, but we won't use it here
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -97,8 +99,8 @@ export function DocumentDrive() {
     <div className="max-w-7xl mx-auto space-y-8">
       <SectionHead 
         eyebrow="Phase 3 & 21"
-        title="Secure Document Vault" 
-        sub="Your centralized, end-to-end encrypted repository for all official documents." 
+        title={t.vault.title} 
+        sub={t.vault.sub} 
       />
 
       <div className="grid lg:grid-cols-4 gap-8">
@@ -155,9 +157,9 @@ export function DocumentDrive() {
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-70 shadow-sm shadow-emerald-600/20"
               >
                 {isFetchingDigiLocker ? (
-                  <><Loader2 size={16} className="animate-spin" /> Fetching Credentials...</>
+                  <><Loader2 size={16} className="animate-spin" /> {t.vault.digilockerSyncing}</>
                 ) : (
-                  <><LinkIcon size={16} /> Link DigiLocker</>
+                  <><LinkIcon size={16} /> {t.vault.digilocker}</>
                 )}
               </button>
             )}
@@ -194,7 +196,7 @@ export function DocumentDrive() {
                 </div>
               </div>
               <Btn className="flex items-center gap-2 shadow-sm" onClick={() => setShowUploadModal(true)}>
-                <Upload size={16} /> Upload New Document
+                <Upload size={16} /> {t.vault.upload}
               </Btn>
             </div>
             
@@ -240,7 +242,7 @@ export function DocumentDrive() {
                       className="text-xs py-1.5 px-4"
                       onClick={() => setSelectedDocForView(doc)}
                     >
-                      View
+                      {t.vault.view}
                     </Btn>
                   </div>
                 </div>

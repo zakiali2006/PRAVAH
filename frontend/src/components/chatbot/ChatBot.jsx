@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Bot, X, Send, Loader2, FileText, AlertCircle, Sparkles, Copy, Check, ChevronDown } from "lucide-react";
 import api from "../../api/axios";
+import { useTranslation } from "../../contexts/TranslationContext";
 
 export function ChatBot() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [applications, setApplications] = useState([]);
   const [selectedAppId, setSelectedAppId] = useState("");
@@ -11,7 +13,7 @@ export function ChatBot() {
   const [msgs, setMsgs] = useState([
     {
       role: "assistant",
-      text: "Namaskar. I am your PRAVAH AI Copilot. Ask me anything about your uploaded compliance documents, application status, document verification, or AI risk score.",
+      text: t.chat?.greeting || "Hello! I am your PRAVAH assistant. How can I help you today?",
       sources: [],
       suggestions: [],
     },
@@ -148,7 +150,7 @@ export function ChatBot() {
                   </div>
                   <div>
                     <div className="font-extrabold text-sm tracking-tight text-white flex items-center gap-1.5">
-                      PRAVAH Copilot
+                      {t.chat?.title || "PRAVAH Copilot"}
                       <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">AI</span>
                     </div>
                     <div className="text-[10px] font-medium text-slate-400">
@@ -312,9 +314,7 @@ export function ChatBot() {
                   placeholder={
                     busy
                       ? "Thinking..."
-                      : selectedAppId
-                      ? "Ask Copilot about your application..."
-                      : "Ask about your uploaded documents..."
+                      : t.chat?.placeholder || "Ask about your uploaded documents..."
                   }
                   disabled={busy}
                   className="flex-1 bg-slate-950 text-white text-xs px-3 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-blue-500 placeholder-slate-500 disabled:opacity-50"

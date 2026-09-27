@@ -90,6 +90,7 @@ export const createApplication = async (data) => {
   return response.data;
 };
 
+
 export const getOfficerQueue = async () => {
   const response = await apiClient.get('/officer/queue');
   return response.data;

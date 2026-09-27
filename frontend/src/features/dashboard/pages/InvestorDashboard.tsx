@@ -4,6 +4,7 @@ import { LayoutDashboard, Package, CheckSquare, FileText, CheckCircle2, PieChart
 import { useApplications, useApplicationTracking } from '../../../hooks/useApplications';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useTranslation } from '../../../contexts/TranslationContext';
 
 const getStageIcon = (title) => {
   const t = title.toLowerCase();
@@ -16,6 +17,7 @@ const getStageIcon = (title) => {
 export const InvestorDashboard = () => {
   const { applications = [] } = useApplications();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   const recentApp = applications.length > 0 ? [...applications].sort((a, b) => new Date(b.created_at || b.submitted_at).getTime() - new Date(a.created_at || a.submitted_at).getTime())[0] : null;
   const { application: trackedApp } = useApplicationTracking(recentApp?.id);
@@ -27,22 +29,32 @@ export const InvestorDashboard = () => {
   const pending = applications.filter(a => ['submitted', 'pending', 'draft'].includes(a.status?.toLowerCase())).length;
 
   const pieData = [
-    { name: 'Approved', value: approved, color: '#10b981' },
-    { name: 'In Progress', value: inProgress, color: '#3b82f6' },
-    { name: 'Under Review', value: underReview, color: '#f59e0b' },
-    { name: 'Pending', value: pending, color: '#ef4444' },
+    { name: t.dash.pieApproved, value: approved, color: '#10b981' },
+    { name: t.dash.pieInProgress, value: inProgress, color: '#3b82f6' },
+    { name: t.dash.pieUnderReview, value: underReview, color: '#f59e0b' },
+    { name: t.dash.piePending, value: pending, color: '#ef4444' },
   ].filter(d => d.value > 0);
 
   if (pieData.length === 0) {
-    pieData.push({ name: 'No Apps', value: 1, color: '#e2e8f0' });
+    pieData.push({ name: t.dash.pieNoApps, value: 1, color: '#e2e8f0' });
   }
+
+  const getTranslatedStageName = (titleOrName) => {
+    if (!titleOrName) return "";
+    const lower = titleOrName.toLowerCase();
+    if (lower.includes('submit')) return t.timeline.submitted;
+    if (lower.includes('verif')) return t.timeline.verification;
+    if (lower.includes('scrutiny')) return t.timeline.scrutiny;
+    if (lower.includes('approv')) return t.timeline.approval;
+    return titleOrName;
+  };
 
   // Timeline stages
   const defaultStages = [
-    { name: "Application Submitted", status: "completed", icon: <Check size={18} className="stroke-[3]" /> },
-    { name: "Document Verification", status: "in-progress", icon: <File size={18} /> },
-    { name: "Department Scrutiny", status: "pending", icon: <User size={18} /> },
-    { name: "Final Approval", status: "pending", icon: <Award size={18} /> }
+    { name: t.timeline.submitted, status: "completed", icon: <Check size={18} className="stroke-[3]" /> },
+    { name: t.timeline.verification, status: "in-progress", icon: <File size={18} /> },
+    { name: t.timeline.scrutiny, status: "pending", icon: <User size={18} /> },
+    { name: t.timeline.approval, status: "pending", icon: <Award size={18} /> }
   ];
 
   const stages = trackedApp?.stages || defaultStages;
@@ -58,128 +70,76 @@ export const InvestorDashboard = () => {
   const progressPercentage = displayStages.length > 1 ? (activeIndex / (displayStages.length - 1)) * 100 : 0;
 
   return (
-    <div className="w-full h-full flex flex-col p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6 max-w-[1400px] mx-auto overflow-y-auto overflow-x-hidden">
-      
-      {/* Banner */}
-      <div className="relative bg-gradient-to-br from-blue-50 via-indigo-50/50 to-indigo-50 border border-blue-100/80 rounded-[2rem] p-6 md:p-8 lg:p-10 shadow-sm flex flex-col md:flex-row items-center justify-between shrink-0 overflow-hidden">
-        
-        {/* Subtle decorative background blur */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div className="w-full h-full flex flex-col p-4 md:p-5 lg:p-6 pb-20 md:pb-20 lg:pb-20 space-y-4 md:space-y-5 max-w-[1400px] mx-auto overflow-y-auto overflow-x-hidden">
 
-        <div className="z-10 w-full md:max-w-2xl">
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-            className="flex items-center gap-2 text-slate-600 font-bold mb-2 text-sm md:text-base"
-          >
-            <span className="text-xl">👋</span> Welcome to PRAVAH
-          </motion.div>
-          <motion.h1 
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 leading-[1.1] mb-3 tracking-tight"
-          >
-            Simpler Approvals.<br className="hidden sm:block"/>Stronger Businesses.
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-slate-500 text-sm md:text-base font-medium leading-relaxed max-w-md"
-          >
-            Your single platform for government services, approvals and compliance in Maharashtra.
-          </motion.p>
-        </div>
-        
-        {/* Premium Abstract Graphic on Right */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.3 }}
-          className="hidden lg:flex absolute right-12 top-0 bottom-0 items-center justify-center pointer-events-none"
-        >
-          <div className="relative w-80 h-full flex items-end justify-center pb-8">
-            <div className="w-12 h-24 bg-white/60 backdrop-blur-sm rounded-t-xl mx-1.5 border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"></div>
-            <div className="w-16 h-40 bg-slate-200/80 backdrop-blur-md rounded-t-xl mx-1.5 relative shadow-[0_8px_30px_rgb(0,0,0,0.08)] z-10 border border-white/90"></div>
-            <div className="w-14 h-32 bg-indigo-100/80 backdrop-blur-sm rounded-t-xl mx-1.5 border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.06)]"></div>
-            
-            <div className="absolute top-1/2 right-0 translate-x-4 -translate-y-12 z-20">
-              <div className="bg-white/95 backdrop-blur-xl border border-slate-100 p-5 rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] transform rotate-2">
-                <p className="font-bold text-slate-800 text-base leading-snug tracking-tight">
-                  "Enabling<br/>Businesses,<br/>Strengthening<br/>Maharashtra"
-                </p>
-                <div className="w-10 h-1.5 bg-orange-500 rounded-full mt-3"></div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+      <div className="pt-1 mb-1">
+        <h2 className="text-lg lg:text-xl font-black text-slate-900 tracking-tight">{t.dash.title}</h2>
+        <p className="text-xs text-slate-500 font-medium">{t.dash.sub}</p>
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 shrink-0">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 shrink-0 mb-2 md:mb-4">
         
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="bg-white border border-slate-200 rounded-[2rem] p-5 lg:p-6 flex flex-col justify-center shadow-sm">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] shrink-0">
-              <LayoutDashboard size={20} />
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="bg-white border border-slate-200 rounded-[1.5rem] p-5 flex flex-col hover:shadow-lg transition-all duration-300 group relative overflow-hidden">
+          <div className="flex justify-between items-start mb-2">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <Package size={20} />
             </div>
-            <h3 className="font-bold text-slate-800 text-sm lg:text-base leading-tight">Dashboard<br className="hidden lg:block"/> Overview</h3>
           </div>
-          <p className="text-xs text-slate-500 font-medium leading-relaxed">Key numbers for your business journey</p>
+          <h2 className="text-3xl lg:text-4xl font-black text-slate-900 mb-0.5">179</h2>
+          <p className="text-xs font-bold text-slate-500">{t.dash.totalServ}</p>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }} className="bg-[#f8faff] border border-blue-100 rounded-[2rem] p-5 lg:p-6 flex items-center justify-between hover:shadow-md transition-all duration-300 group">
-          <div>
-            <p className="text-[10px] font-black tracking-widest text-slate-500 uppercase mb-1">TOTAL SERVICES</p>
-            <h2 className="text-3xl lg:text-4xl font-black text-slate-900">179</h2>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }} className="bg-white border border-slate-200 rounded-[1.5rem] p-5 flex flex-col hover:shadow-lg transition-all duration-300 group relative overflow-hidden">
+          <div className="flex justify-between items-start mb-2">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <CheckSquare size={20} />
+            </div>
+            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">+4%</span>
           </div>
-          <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-blue-100/80 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shrink-0">
-            <Package size={24} />
-          </div>
+          <h2 className="text-3xl lg:text-4xl font-black text-slate-900 mb-0.5">48</h2>
+          <p className="text-xs font-bold text-slate-500">{t.dash.approvals}</p>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.3 }} className="bg-[#f5fcf7] border border-green-100 rounded-[2rem] p-5 lg:p-6 flex items-center justify-between hover:shadow-md transition-all duration-300 group">
-          <div>
-            <p className="text-[10px] font-black tracking-widest text-slate-500 uppercase mb-1">APPROVALS</p>
-            <h2 className="text-3xl lg:text-4xl font-black text-slate-900">48</h2>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.3 }} className="bg-white border border-slate-200 rounded-[1.5rem] p-5 flex flex-col hover:shadow-lg transition-all duration-300 group relative overflow-hidden">
+          <div className="flex justify-between items-start mb-2">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <FileText size={20} />
+            </div>
+            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">Live</span>
           </div>
-          <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-green-100/80 text-green-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shrink-0">
-            <CheckSquare size={24} />
-          </div>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.4 }} className="bg-[#fcfaff] border border-purple-100 rounded-[2rem] p-5 lg:p-6 flex items-center justify-between hover:shadow-md transition-all duration-300 group">
-          <div>
-            <p className="text-[10px] font-black tracking-widest text-slate-500 uppercase mb-1">APPLICATIONS</p>
-            <h2 className="text-3xl lg:text-4xl font-black text-slate-900">{totalApps}</h2>
-          </div>
-          <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-purple-100/80 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shrink-0">
-            <FileText size={24} />
-          </div>
+          <h2 className="text-3xl lg:text-4xl font-black text-slate-900 mb-0.5">{totalApps}</h2>
+          <p className="text-xs font-bold text-slate-500">{t.dash.apps}</p>
         </motion.div>
 
       </div>
 
       {/* Main Bottom Section */}
-      <div className="flex flex-col lg:flex-row gap-4 md:gap-6 shrink-0 min-h-[300px]">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4 shrink-0 min-h-[250px]">
         
         {/* Premium Roadmap (Left) */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className="flex-[2] bg-white border border-slate-200 rounded-[2rem] p-6 lg:p-8 shadow-sm flex flex-col justify-between relative overflow-hidden">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className="lg:col-span-2 bg-white border border-slate-200 rounded-[1.5rem] p-5 shadow-sm flex flex-col justify-between relative overflow-hidden">
           
-          <div className="flex items-center justify-between mb-8 relative z-10">
+          <div className="flex items-center justify-between mb-4 relative z-10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] shrink-0">
+              <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] shrink-0">
                 <CheckCircle2 size={20} />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-lg lg:text-xl tracking-tight">Your Approval Roadmap</h3>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">Track your journey from application to approval</p>
+                <h3 className="font-bold text-slate-900 text-lg lg:text-xl tracking-tight">{t.investorHero.roadmap}</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">{t.investorHero.roadmapSub}</p>
               </div>
             </div>
             <button onClick={() => navigate('/app/applications')} className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors bg-blue-50/80 hover:bg-blue-100 px-4 py-2 rounded-full shrink-0">
-              <span className="hidden sm:inline">View Full</span> Roadmap <ArrowRight size={14} />
+              {t.investorHero.viewRoadmap} <ArrowRight size={14} />
             </button>
           </div>
 
           {/* Premium Timeline Nodes */}
-          <div className="relative w-full flex justify-between items-start flex-1 mt-6 lg:mt-8 pb-4">
+          <div className="relative w-full flex justify-between items-start flex-1 mt-4 lg:mt-6 pb-2">
             
             {/* Background Track Line */}
-            <div className="absolute top-[22px] lg:top-[26px] left-[10%] right-[10%] h-1.5 bg-slate-100 rounded-full z-0 overflow-hidden">
+            <div className="absolute top-[20px] left-[10%] right-[10%] h-1.5 bg-slate-100 rounded-full z-0 overflow-hidden">
                {/* Animated Progress Line */}
                <motion.div 
                  initial={{ width: 0 }} 
@@ -193,7 +153,7 @@ export const InvestorDashboard = () => {
               const s = stage.status ? stage.status.toLowerCase() : 'pending';
               const isCompleted = s === 'completed' || s === 'approved';
               const isCurrent = idx === currentStepIdx;
-              const statusLabel = isCompleted ? 'Completed' : (isCurrent ? 'In Progress' : 'Pending');
+              const statusLabel = isCompleted ? t.timeline.completed : (isCurrent ? t.timeline.inProgress : t.timeline.pendingStatus);
 
               return (
                 <div key={idx} className="relative z-10 flex flex-col items-center flex-1 text-center group">
@@ -201,10 +161,10 @@ export const InvestorDashboard = () => {
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.4, delay: 0.4 + (idx * 0.1) }}
-                    className={`w-12 h-12 lg:w-14 lg:h-14 rounded-full flex items-center justify-center mb-3 md:mb-4 transition-all duration-300 shrink-0 relative
-                    ${isCompleted ? 'bg-emerald-500 text-white shadow-[0_0_0_6px_rgba(255,255,255,1),0_0_0_8px_rgba(16,185,129,0.15)]' : 
-                      isCurrent ? 'bg-blue-600 text-white shadow-[0_0_0_6px_rgba(255,255,255,1),0_0_0_8px_rgba(37,99,235,0.2)]' : 
-                      'bg-white text-slate-300 border-[3px] border-slate-100'}`}
+                    className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center mb-2 md:mb-3 transition-all duration-300 shrink-0 relative
+                    ${isCompleted ? 'bg-emerald-500 text-white shadow-[0_0_0_4px_rgba(255,255,255,1),0_0_0_6px_rgba(16,185,129,0.15)]' : 
+                      isCurrent ? 'bg-blue-600 text-white shadow-[0_0_0_4px_rgba(255,255,255,1),0_0_0_6px_rgba(37,99,235,0.2)]' : 
+                      'bg-white text-slate-300 border-2 border-slate-100'}`}
                   >
                     {/* Pulse effect for active node */}
                     {isCurrent && (
@@ -214,9 +174,9 @@ export const InvestorDashboard = () => {
                     {stage.icon || getStageIcon(stage.name)}
                   </motion.div>
                   
-                  <h4 className={`text-[11px] lg:text-xs font-bold leading-tight px-2 h-8 lg:h-10 flex items-center justify-center w-full max-w-[100px] lg:max-w-[120px] transition-colors duration-300
+                  <h4 className={`text-[11px] lg:text-xs font-bold leading-tight px-2 h-8 lg:h-10 flex items-center justify-center text-center w-full max-w-[100px] lg:max-w-[120px] transition-colors duration-300
                     ${isCompleted || isCurrent ? 'text-slate-900' : 'text-slate-400'}`}>
-                    {stage.name || stage.title}
+                    {getTranslatedStageName(stage.name || stage.title)}
                   </h4>
                   
                   <div className="mt-2">
@@ -235,34 +195,34 @@ export const InvestorDashboard = () => {
         </motion.div>
 
         {/* Premium Application Status (Right) */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }} className="flex-[1] bg-white border border-slate-200 rounded-[2rem] p-6 lg:p-8 shadow-sm flex flex-col justify-between overflow-hidden relative">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }} className="lg:col-span-1 bg-white border border-slate-200 rounded-[1.5rem] p-5 shadow-sm flex flex-col justify-between overflow-hidden relative">
           
-          <div className="flex items-center justify-between mb-4 relative z-10">
+          <div className="flex items-center justify-between mb-2 relative z-10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] shrink-0">
+              <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] shrink-0">
                 <PieChartIcon size={20} />
               </div>
-              <h3 className="font-bold text-slate-900 text-lg lg:text-xl tracking-tight">Application Status</h3>
+              <h3 className="font-bold text-slate-900 text-lg lg:text-xl tracking-tight">{t.investorHero.appStatus}</h3>
             </div>
             <button onClick={() => navigate('/app/applications')} className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors shrink-0">
-              View All <ArrowRight size={14} />
+              {t.dash.viewAll} <ArrowRight size={14} />
             </button>
           </div>
 
-          <div className="flex flex-row items-center justify-between flex-1 mt-4">
+          <div className="flex flex-row items-center justify-between flex-1 mt-2">
             
             {/* Chart Side */}
-            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5, delay: 0.6 }} className="relative w-[140px] h-[140px] lg:w-[160px] lg:h-[160px] shrink-0">
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5, delay: 0.6 }} className="relative w-[120px] h-[120px] lg:w-[140px] lg:h-[140px] shrink-0">
               <div className="absolute inset-0 flex items-center justify-center flex-col z-0">
-                <span className="text-4xl font-black text-slate-900 leading-none tracking-tighter">{totalApps}</span>
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">TOTAL</span>
+                <span className="text-3xl font-black text-slate-900 leading-none tracking-tighter">{totalApps}</span>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">{t.dash.totalLabel}</span>
               </div>
               <ResponsiveContainer width="100%" height="100%" className="z-10">
                 <PieChart>
                   <Pie
                     data={pieData}
-                    innerRadius={55}
-                    outerRadius={70}
+                    innerRadius={45}
+                    outerRadius={60}
                     paddingAngle={4}
                     dataKey="value"
                     stroke="none"
@@ -287,7 +247,12 @@ export const InvestorDashboard = () => {
                 <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.3, delay: 0.7 + (index * 0.1) }} key={index} className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: item.color }}></div>
-                    <span className="text-xs font-bold text-slate-600">{item.name}</span>
+                    <span className="text-xs font-bold text-slate-600">
+                      {item.name === 'Approved' ? t.dash.approvedLabel :
+                       item.name === 'In Progress' ? t.timeline.inProgress :
+                       item.name === 'Under Review' ? t.timeline.verification :
+                       item.name === 'Pending' ? t.timeline.pendingStatus : item.name}
+                    </span>
                   </div>
                   <span className="font-black text-slate-900 text-sm ml-2">{item.value}</span>
                 </motion.div>
