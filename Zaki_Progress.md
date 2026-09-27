@@ -2,72 +2,57 @@
 
 ## 🚀 Accomplishments & Features Built Today
 
-Today’s focus was on transforming the Investor tracking experience and the Officer processing workflow into a cohesive, real-world, bug-free web application.
+Today’s focus was on major UI/UX polish, integrating the secure Document Vault, connecting Business Profile logic to the backend, and synchronizing development branches.
 
-### 1. Animated Tracking Timeline (Investor Dashboard)
-- **Fluid Micro-Animations**: Built a custom dynamic timeline for `ServicesApplied.jsx`. When an investor tracks their application, a green progress bar travels smoothly from step to step, strictly stopping at the current active stage.
-- **Chronological Stability**: Fixed backend models to sort stages strictly by `Stage.id`. This prevents random stage rendering and ensures the animation doesn't jump backwards.
-- **Visual Clarity**: Removed unnecessary horizontal scrolling, keeping the timeline locked and visually premium. The status colors update intelligently (Green for completed, Amber/Yellow for pending, White for untouched).
+### 1. Secure Document Vault & AI Validation UI
+- **Backend Connection**: The `DocumentDrive` frontend is now fully linked to the `/api/documents` backend, securely storing and retrieving investor documents.
+- **AI Verification Redesign**: Completely overhauled the document validation pop-up. AI results are now clearly separated into *Status Banner*, *Critical Mismatches*, *Verified Matches*, *AI Observations*, and *Extracted Metadata* rather than a nested box layout. Modal sizes were increased for better readability without immediate scrolling.
+- **DigiLocker Mock API**: Added an API endpoint to simulate syncing verified Aadhaar and PAN credentials directly into the vault.
+- **Dynamic File Size Formatting**: Fixed file size display logic across the vault, so files smaller than 1MB correctly display in KB (e.g., 45 KB) instead of 0.0 MB.
 
-### 2. Streamlined Officer Processing Workflow
-- **State Machine Fix**: Completely overhauled the backend state transition in `ApplicationService.update_status`. Previously, applications were stuck in "Submitted". Now, processing stages cascade naturally: `Document Verification` → `Department Scrutiny` → `Final Approval` → `Approved`.
-- **UI Expansion**: Redesigned the `OfficerQueue.jsx` modal to feel more "spread out and open". We implemented a clear, real-world step-by-step approval view where officers see granular "Approve" buttons specifically bound to the currently pending stage.
-- **Queue Optimization**: Updated the database queries so the most recent applications always appear at the top of the Officer queue (`created_at.desc()`).
+### 2. Business Profile, Factory Units, and Policy Pages
+- **End-to-End Integration**: Fully connected the frontend UI with the backend for managing Business Profiles and adding Factory Units, ensuring smooth data flow.
+- **Policy Management**: Built out the frontend UI and connected the backend for the Policy sections so they are fully functional.
 
-### 3. Polish, Badges, and UX Quality
-- **Global Status Badging**: Created a unified `getStatusBadge` component that standardizes UI across the app. "APPROVED" is bright green, "PENDING PROCESSING" is yellow, etc.
-- **Secure 1-Click Login**: Eradicated the annoying "Data Breach" browser popup. Migrated the database seed scripts (`seed.py` and `seed_users.py`) to use a highly unique password (`PravahTest!2026`) and updated `Login.jsx` to prefill credentials securely. You can now switch roles and log in with zero typing.
+### 3. Branch Synchronization & UI Polish
+- **Merge Conflict Resolution**: Successfully merged the `zaki` branch into `develop`. Manually resolved complex layout conflicts across `AuthenticatedLayout`, `FactoryUnits`, and `MyBusiness`.
+- **Global Spacing Fixes**: Added proper padding and removed horizontal scrolling bugs, ensuring the content no longer feels "sticky" or messy.
+- **Login Bug Fix**: Resolved an issue where the Login button wouldn't submit the form, ensuring 1-click login works flawlessly.
 
 ---
 
 ## 🧪 How to Test Today's Changes
 
-1. **Test the 1-Click Login**:
-   - Go to `http://localhost:5173/login`.
-   - Click the **Investor** tab and click **Login** (No typing needed, no popups).
-2. **Test the Investor Tracking**:
-   - On the Investor Dashboard, click **My Applications** -> **Track**.
-   - Watch the fluid green line animation travel across the screen and stop precisely at the current pending stage.
-3. **Test the Officer Queue**:
-   - Log out, go to Login, click **Department Officer**, and click **Login**.
-   - Notice that the newest applications are at the very top of the table.
-   - Click **Process** on a pending application.
-   - You will see the expanded, clean UI. Approve the pending step. Notice how the application state immediately jumps to the next logical step (e.g., from Scrutiny to Final Approval).
-   - Once the final step is approved, the entire application will turn Green and display "APPROVED".
+1. **Test the Document Vault**:
+   - Log in as an Investor and navigate to `My Business` -> `Document Drive`.
+   - Upload a new document and watch the AI Validation modal cleanly separate the extracted data and mismatches.
+   - Click "Link DigiLocker" to instantly mock-fetch verified credentials.
+2. **Test the Layout & Business Profiles**:
+   - Navigate through the dashboard and observe that the horizontal scrolling is gone and content is properly padded.
+   - Add a Factory Unit in the Business Profile section and see it save to the backend.
 
 ---
 
-## 🏆 High-Impact Roadmap (To Maximize Winning Chances)
+## 🏆 High-Impact Roadmap (What Needs to Be Done Next)
 
-To ensure PRAVAH stands out to the judges at the SIH Hackathon, the next phases must focus on **cutting-edge technology integration** and **business value**. Here is what we should build next to secure the win:
+To maximize PRAVAH's chances of winning the SIH Hackathon, here are the next major milestones to tackle:
 
-### 1. AI-Powered Risk Scoring & Smart Triage (The "Wow" Factor)
-- **Feature**: Integrate an AI module (using Gemini or an ML model) that assigns an "AI Risk Score" (0-100) to every incoming application based on their business profile and history.
-- **Why it wins**: Judges love AI. Instead of officers reading every document, the AI flags high-risk applications in Red and fast-tracks low-risk applications in Green, showing real-world workflow optimization.
+### 1. Auto-fill using My Documents & Profile
+- **Feature**: When an investor applies for a service, the system should automatically pull data from their Business Profile and verified Document Vault to auto-fill the application forms.
+- **Impact**: Massively reduces friction and typing for the user, showcasing a deeply integrated, intelligent platform.
 
-### 2. Automated OCR Document Verification
-- **Feature**: When an investor uploads a PDF/Image (e.g., Incorporation Certificate), the system automatically scans the text (using Tesseract or a cloud Vision API) to verify if the company name matches the user's registered profile.
-- **Why it wins**: Demonstrates complex automation. If the AI verifies the document automatically, the first stage ("Document Verification") can be bypassed instantly, saving human hours.
+### 2. AI Risk Scoring & Smart Triage (Officer Dashboard)
+- **Feature**: Integrate an AI module that assigns an "AI Risk Score" (0-100) to incoming applications based on their business profile, documents, and history.
+- **Impact**: Demonstrates real-world workflow optimization by flagging high-risk applications in Red for careful scrutiny and fast-tracking low-risk ones in Green.
 
-### 3. Policy Admin Analytics & Insights Dashboard
-- **Feature**: Build a global Policy Admin view that features beautiful, interactive charts (using Recharts/Chart.js). It should display:
-  - Average processing time per department.
-  - Identification of bottlenecks (e.g., "Department Scrutiny is taking 5 days on average").
-  - Heatmaps of applications across the country/state to help shape new governmental policies.
-- **Why it wins**: High-level dashboards show that the platform isn't just a basic CRUD app—it provides systemic, data-driven insights allowing Policy Admins to amend rules and improve governmental processes.
+### 3. Real-World, Comprehensive Policy Forms
+- **Feature**: Overhaul the policy pages to feature comprehensive, real-world governmental forms rather than simple templates.
+- **Impact**: Brings authenticity to the platform. Proves that the system is robust enough to handle the complex data requirements of actual government departments.
 
-### 4. Interactive Notifications & Webhooks
-- **Feature**: Add a real-time notification bell in the frontend. When an officer approves a stage, the investor instantly gets a toast notification (via WebSockets/Socket.io) saying "Your application has moved to Scrutiny".
-- **Why it wins**: Real-time interactivity makes the application feel alive and premium, showcasing full-stack maturity.
+### 4. Push Notifications / Real-time Updates
+- **Feature**: Add real-time notifications (via WebSockets/SSE) so investors get instant alerts when an officer approves a stage or requests clarification.
+- **Impact**: Makes the platform feel highly interactive and alive, highlighting full-stack maturity.
 
-### 5. Multi-lingual Support & Localization (Inclusivity)
-- **Feature**: Integrate an internationalization library (like eact-i18next) to allow investors to switch the portal language between English, Hindi, and other regional/foreign languages. 
-- **Why it wins**: Government portals are judged heavily on accessibility and inclusivity. A language switcher proves the platform is scalable for both rural domestic entrepreneurs and foreign direct investors (FDI) who might prefer reading policies in their native language.
-
-### 6. Deep Workflow Integration of Existing RAG Chatbot
-- **Feature**: Since the PRAVAH RAG-powered chatbot is already fully implemented and accurately answering complex policy/legal queries, the next high-value step is to deeply integrate it with the application workflow. For instance, allowing the chatbot to automatically draft or auto-fill parts of the investor's application based on their conversational history and uploaded context.
-- **Why it wins**: Having a working RAG chatbot is already a massive accomplishment. Taking it a step further by turning the chatbot into a proactive "Application Copilot" that directly interacts with the platform's forms proves Next-Gen GenAI capabilities, moving beyond simple Q&A into actionable, workflow-driven AI.
-
-### 7. Blockchain-Secured / Immutable Certificates
-- **Feature**: Once an application reaches "Approved", the final Incorporation Certificate is hashed and "stamped" with a cryptographic hash (mocking a Blockchain or DigiLocker integration), providing a QR code for instant verification.
-- **Why it wins**: Document forgery is a massive problem in government approvals. Showing a verifiable, tamper-proof QR code system for final certificates highlights a strong understanding of security and modern GovTech standards.
+### 5. Finalize Trilingual Support (Merge `zaki` into `niraja`)
+- **Feature**: Merge the recent UI updates and new pages from the `zaki` branch into the `niraja` branch. 
+- **Next Step**: Verify that English, Hindi, and regional language translations work flawlessly across all newly created pages and the entire website globally.

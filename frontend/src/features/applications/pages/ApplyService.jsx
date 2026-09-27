@@ -7,6 +7,7 @@ import { Btn } from '../../../components/common/Btn';
 import { C, inputCls, inputStyle } from '../../../constants/theme';
 import { Check, ChevronRight, Loader2, Bot, Sparkles, ArrowLeft } from 'lucide-react';
 import { useApplications } from '../../../hooks/useApplications';
+import { getMyBusinessProfile } from '../../../api/client';
 
 const STEPS = ["Initiation", "Form Data", "Documents", "Payment"];
 
@@ -83,33 +84,34 @@ export function ApplyService() {
   const handlePrefill = async () => {
     setIsPrefilling(true);
     setPrefillStatusText('Connecting to PRAVAH Vault...');
-    await new Promise(resolve => setTimeout(resolve, 800));
     
-    setPrefillStatusText('Verifying DigiLocker KYC...');
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    setPrefillStatusText('Mapping Data Fields (AI)...');
-    await new Promise(resolve => setTimeout(resolve, 800));
+    try {
+      const profile = await getMyBusinessProfile();
+      
+      setPrefillStatusText('Verifying DigiLocker KYC...');
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      setPrefillStatusText('Mapping Data Fields (AI)...');
+      await new Promise(resolve => setTimeout(resolve, 800));
 
-    setFormData({
-      ...formData,
-      businessName: 'Sahyadri Precision Ltd',
-      unitId: 'U-99283-MH',
-      employees: '145',
-      power: '750',
-      pan: 'ABCDE1234F',
-      cin: 'U72900MH2021PTC123456',
-      gstin: '27ABCDE1234F1Z5',
-      doi: '2021-04-15',
-      address: 'Plot No. 45, MIDC Industrial Area, Andheri East',
-      district: 'Mumbai Suburban',
-      pin: '400093',
-      sector: 'Manufacturing',
-      investment: '25000000'
-    });
-    setIsPrefilling(false);
-    setIsPrefilled(true);
-    setPrefillStatusText('Auto-fill Data');
+      setFormData({
+        ...formData,
+        businessName: profile?.company_name || '',
+        pan: profile?.pan_number || '',
+        cin: profile?.cin_number || '',
+        gstin: profile?.gstin || '',
+        doi: profile?.date_of_incorporation || '',
+        address: profile?.address || '',
+        sector: profile?.industry_sector || ''
+      });
+      setIsPrefilled(true);
+    } catch (err) {
+      console.error("Failed to fetch profile", err);
+      alert("No business profile found in vault. Please create one first.");
+    } finally {
+      setIsPrefilling(false);
+      setPrefillStatusText('Auto-fill Data');
+    }
   };
 
   const inputHighlightedCls = `${inputCls} transition-all duration-500 ${isPrefilled ? 'bg-blue-50/50 border-blue-300 ring-2 ring-blue-100' : ''}`;

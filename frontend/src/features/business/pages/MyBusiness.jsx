@@ -69,8 +69,16 @@ export function MyBusiness() {
                 <span className="text-sm font-mono font-bold text-slate-800">{profile.pan_number || 'N/A'}</span>
               </div>
               <div className="flex justify-between items-center pb-2 border-b border-slate-50">
+                <span className="text-xs text-slate-400 font-bold">GSTIN</span>
+                <span className="text-sm font-mono font-bold text-slate-800">{profile.gstin || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-slate-50">
                 <span className="text-xs text-slate-400 font-bold">CIN NUMBER</span>
                 <span className="text-sm font-mono font-bold text-slate-800">{profile.cin_number || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-slate-50">
+                <span className="text-xs text-slate-400 font-bold">INCORPORATED</span>
+                <span className="text-sm font-bold text-slate-800">{profile.date_of_incorporation || 'N/A'}</span>
               </div>
               <div className="flex justify-between items-center pb-2 border-b border-slate-50">
                 <span className="text-xs text-slate-400 font-bold">REG. TYPE</span>
