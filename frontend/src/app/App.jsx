@@ -49,12 +49,16 @@ import { DepartmentQueries } from "../features/grievances/pages/DepartmentQuerie
 import { PublicConsultations } from "../features/home/pages/PublicConsultations";
 import { AuditLogs } from "../features/dashboard/pages/AuditLogs";
 import { FraudRadar } from "../features/officer/pages/FraudRadar";
+import { DocumentReview } from "../features/officer/pages/DocumentReview";
+import { DuplicateAlerts } from "../features/officer/pages/DuplicateAlerts";
+import { OfficerGrievances } from "../features/officer/pages/OfficerGrievances";
 import { Feedback } from "../features/dashboard/pages/Feedback";
 
 // Policy Admin Pages
 import { PolicyDashboard } from "../features/policy/pages/PolicyDashboard";
 import { ManageServices } from "../features/policy/pages/ManageServices";
 import { ConfigureWorkflows } from "../features/policy/pages/ConfigureWorkflows";
+import { RiskAlerts } from "../features/dashboard/pages/RiskAlerts";
 import { 
   BottleneckAnalytics, 
   DistrictAnalysis, 
@@ -133,7 +137,7 @@ function AppRoutes() {
               <Route path="audit" element={<AuditLogs />} />
               <Route path="feedback" element={<Feedback />} />
               <Route path="documents" element={<DocumentDrive />} />
-              <Route path="risk" element={<UnderConstruction title="Risk Alerts" />} />
+              <Route path="risk" element={<RiskAlerts />} />
             </Route>
 
             {/* Officer Routes */}
@@ -145,9 +149,9 @@ function AppRoutes() {
               <Route path="dashboard" element={<OfficerDashboard />} />
               <Route path="fraud" element={<FraudRadar alerts={INITIAL_FRAUD_ALERTS} />} />
               <Route path="queue" element={<OfficerQueue />} />
-              <Route path="documents" element={<UnderConstruction title="Document Review" />} />
-              <Route path="duplicates" element={<UnderConstruction title="Duplicate Alerts" />} />
-              <Route path="grievances" element={<UnderConstruction title="Grievances" />} />
+              <Route path="documents" element={<DocumentReview />} />
+              <Route path="duplicates" element={<DuplicateAlerts />} />
+              <Route path="grievances" element={<OfficerGrievances />} />
             </Route>
 
             {/* Policy Admin Routes */}

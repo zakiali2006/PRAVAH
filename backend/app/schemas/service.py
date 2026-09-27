@@ -24,8 +24,13 @@ class ServiceUpdate(BaseModel):
 
 class ServiceOut(ServiceBase):
     id: int
-    created_at: Optional[datetime]
-    updated_at: Optional[datetime]
+    service_id: Optional[str] = None
+    name: Optional[str] = "Unknown"
+    department: Optional[str] = None
+    fee: Optional[float] = 0.0
+    status: Optional[str] = "active"
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

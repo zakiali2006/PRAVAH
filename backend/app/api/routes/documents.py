@@ -139,7 +139,12 @@ def list_documents(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    docs = db.query(Document).filter(Document.uploader_id == current_user.id).all()
+    user_role = (current_user.role or "").upper()
+    if user_role in ["OFFICER", "SYSTEM_ADMIN"]:
+        docs = db.query(Document).order_by(Document.id.desc()).all()
+    else:
+        docs = db.query(Document).filter(Document.uploader_id == current_user.id).order_by(Document.id.desc()).all()
+    
     data = [DocumentOut.model_validate(d).model_dump() for d in docs]
     return success_response(data, "Documents retrieved")
 
@@ -172,7 +177,9 @@ def delete_document(
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         return error_response(ErrorCode.RESOURCE_NOT_FOUND, "Document not found", 404)
-    if doc.uploader_id != current_user.id:
+    
+    user_role = (current_user.role or "").upper()
+    if doc.uploader_id != current_user.id and user_role not in ["OFFICER", "SYSTEM_ADMIN"]:
         return error_response(
             ErrorCode.FORBIDDEN, "Not authorized to delete this document", 403
         )
@@ -180,6 +187,34 @@ def delete_document(
     db.delete(doc)
     db.commit()
     return success_response(None, "Document deleted successfully")
+
+
+from fastapi.responses import FileResponse
+import os
+
+@router.get("/{document_id}/download")
+def download_document(
+    document_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+        
+    user_role = (current_user.role or "").upper()
+    if doc.uploader_id != current_user.id and user_role not in ["OFFICER", "SYSTEM_ADMIN"]:
+        raise HTTPException(status_code=403, detail="Not authorized to download this document")
+
+    file_path = storage_service.get_file_path(doc.file_path)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found on disk")
+        
+    return FileResponse(
+        path=file_path,
+        filename=doc.original_name or doc.filename,
+        media_type=doc.mime_type or "application/octet-stream"
+    )
 
 
 @router.post("/digilocker/sync", response_model=dict)

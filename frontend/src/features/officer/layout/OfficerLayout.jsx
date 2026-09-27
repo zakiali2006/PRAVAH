@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, LayoutDashboard, Briefcase, FileWarning, Search, Menu, X, LogOut, Settings } from 'lucide-react';
+import { Shield, LayoutDashboard, Briefcase, FileWarning, Search, Menu, X, LogOut, Settings, FileText, Copy, MessageSquare } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { C } from '../../../constants/theme';
@@ -16,6 +16,9 @@ export function OfficerLayout() {
     { label: "AI Workload Balancer", icon: <LayoutDashboard size={20} />, path: "/officer" },
     { label: "SLA Risk Radar", icon: <FileWarning size={20} />, path: "/officer/risks" },
     { label: "Fraud Detection", icon: <Shield size={20} />, path: "/officer/fraud" },
+    { label: "Document Review", icon: <FileText size={20} />, path: "/officer/documents" },
+    { label: "Duplicate Alerts", icon: <Copy size={20} />, path: "/officer/duplicates" },
+    { label: "Grievances", icon: <MessageSquare size={20} />, path: "/officer/grievances" },
   ];
 
   return (
