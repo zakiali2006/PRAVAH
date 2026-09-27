@@ -193,26 +193,33 @@ def sync_digilocker(
             filename="aadhaar_mock.pdf",
             original_name="Aadhaar Card (Masked)",
             mime_type="application/pdf",
-            size_bytes=460800, # 450 KB
+            size_bytes=460800,  # 450 KB
             file_path="/mock/aadhaar_mock.pdf",
             status="VALID",
             validation_status="VALID",
             document_type_id=1,
             uploader_id=current_user.id,
-            extracted_data={"verification": {"confidence": 1.0, "matches": ["identity_verified"]}}
+            extracted_data={
+                "verification": {"confidence": 1.0, "matches": ["identity_verified"]}
+            },
         ),
         Document(
             filename="pan_mock.pdf",
             original_name="PAN Card",
             mime_type="application/pdf",
-            size_bytes=327680, # 320 KB
+            size_bytes=327680,  # 320 KB
             file_path="/mock/pan_mock.pdf",
             status="VALID",
             validation_status="VALID",
             document_type_id=1,
             uploader_id=current_user.id,
-            extracted_data={"verification": {"confidence": 1.0, "matches": ["tax_identity_verified"]}}
-        )
+            extracted_data={
+                "verification": {
+                    "confidence": 1.0,
+                    "matches": ["tax_identity_verified"],
+                }
+            },
+        ),
     ]
     db.add_all(docs_to_create)
     db.commit()
@@ -229,9 +236,12 @@ def validate_document(
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         return error_response(ErrorCode.RESOURCE_NOT_FOUND, "Document not found", 404)
-        
+
     user_role = (current_user.role or "").upper()
-    if doc.uploader_id != current_user.id and user_role not in ["OFFICER", "SYSTEM_ADMIN"]:
+    if doc.uploader_id != current_user.id and user_role not in [
+        "OFFICER",
+        "SYSTEM_ADMIN",
+    ]:
         return error_response(
             ErrorCode.FORBIDDEN, "Not authorized to access this document", 403
         )
