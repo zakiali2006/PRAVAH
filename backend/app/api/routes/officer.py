@@ -23,6 +23,65 @@ def get_officer_queue(
     return application_repo.get_pending_for_officer(db, current_user.id)
 
 
+@router.get("/documents", response_model=List[dict])
+def get_officer_documents(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _: bool = Depends(allow_officers),
+):
+    from app.models.document import Document
+    docs = db.query(Document).all() # For demo, return all docs
+    # Or docs that are tied to applications for this officer, but for demo this is fine
+    from app.schemas.document import DocumentOut
+    return [DocumentOut.model_validate(d).model_dump() for d in docs]
+
+
+@router.get("/duplicates")
+def get_duplicate_alerts(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _: bool = Depends(allow_officers),
+):
+    # Mock data strictly matching the requested screenshot for the hackathon
+    return [
+        {
+            "id": "DUP-6082",
+            "type": "exact_user_service",
+            "match_score": 9500,
+            "app1_id": "APP/2026/109EC4BE",
+            "app2_id": "APP/2026/9A3FED95",
+            "date": "9/28/2026",
+            "app1_details": {
+                "applicant_name": "Vinayak",
+                "entity_name": "Unknown Entity",
+                "pan": "...",
+                "address": "..."
+            },
+            "app2_details": {
+                "applicant_name": "Vinayak",
+                "entity_name": "Unknown Entity",
+                "pan": "...",
+                "address": "..."
+            }
+        }
+    ]
+
+from pydantic import BaseModel
+class ResolveDuplicateRequest(BaseModel):
+    action: str
+
+@router.post("/duplicates/{alert_id}/resolve")
+def resolve_duplicate_alert(
+    alert_id: str,
+    req: ResolveDuplicateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _: bool = Depends(allow_officers),
+):
+    # In a real app, update the database alert status.
+    # We'll just return success for the demo.
+    return {"status": "success", "action": req.action, "alert_id": alert_id}
+
 @router.post(
     "/applications/{application_id:path}/status", response_model=ApplicationResponse
 )

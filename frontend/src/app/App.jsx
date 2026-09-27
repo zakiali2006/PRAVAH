@@ -40,7 +40,10 @@ import { Grievances } from "../features/grievances/pages/Grievances";
 import { InvestorDashboard } from "../features/dashboard/pages/InvestorDashboard";
 import { MyBusiness } from "../features/business/pages/MyBusiness";
 import { DocumentDrive } from "../features/documents/pages/DocumentDrive";
+import { DigiLockerMockAuth } from "../features/documents/pages/DigiLockerMockAuth";
 import { OfficerDashboard } from "../features/officer/pages/OfficerDashboard";
+import { DocumentReview } from "../features/officer/pages/DocumentReview";
+import { DuplicateAlerts } from "../features/officer/pages/DuplicateAlerts";
 import { OfficerQueue } from "../features/officer/pages/OfficerQueue";
 import { FactoryUnits } from "../features/business/pages/FactoryUnits";
 import { InvestorWizard } from "../features/applications/pages/InvestorWizard";
@@ -143,10 +146,10 @@ function AppRoutes() {
               </RoleGuard>
             }>
               <Route path="dashboard" element={<OfficerDashboard />} />
+              <Route path="documents" element={<DocumentReview />} />
               <Route path="fraud" element={<FraudRadar alerts={INITIAL_FRAUD_ALERTS} />} />
               <Route path="queue" element={<OfficerQueue />} />
-              <Route path="documents" element={<UnderConstruction title="Document Review" />} />
-              <Route path="duplicates" element={<UnderConstruction title="Duplicate Alerts" />} />
+              <Route path="duplicates" element={<DuplicateAlerts />} />
               <Route path="grievances" element={<UnderConstruction title="Grievances" />} />
             </Route>
 
@@ -167,6 +170,7 @@ function AppRoutes() {
             </Route>
           </Route>
 
+            <Route path="/digilocker-auth" element={<DigiLockerMockAuth />} />
 
         </Routes>
         <ChatBot />

@@ -63,18 +63,34 @@ export function DocumentDrive() {
     fetchDocuments();
   }, []);
 
-  const handleDigiLockerSync = async () => {
-    setIsFetchingDigiLocker(true);
-    try {
-      const { syncDigiLockerAPI } = await import('../../../api/client');
-      await syncDigiLockerAPI();
-      await fetchDocuments();
-      setDigiLockerConnected(true);
-    } catch (err) {
-      console.error("Failed to sync DigiLocker", err);
-    } finally {
-      setIsFetchingDigiLocker(false);
+  const location = window.location;
+  const navigate = React.useCallback((path) => window.location.href = path, []);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('digilocker_success') === 'true') {
+      const runSync = async () => {
+        setIsFetchingDigiLocker(true);
+        try {
+          const { syncDigiLockerAPI } = await import('../../../api/client');
+          await syncDigiLockerAPI();
+          await fetchDocuments();
+          setDigiLockerConnected(true);
+          // Remove query param without reloading page
+          window.history.replaceState({}, document.title, location.pathname);
+        } catch (err) {
+          console.error("Failed to sync DigiLocker", err);
+        } finally {
+          setIsFetchingDigiLocker(false);
+        }
+      };
+      runSync();
     }
+  }, [location.search, location.pathname]);
+
+  const handleDigiLockerSync = () => {
+    // Navigate to dummy DigiLocker flow
+    window.location.href = '/digilocker-auth';
   };
 
   return (

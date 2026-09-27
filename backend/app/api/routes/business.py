@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -22,6 +22,8 @@ def get_my_business_profile(
     current_user: User = Depends(get_current_user),
 ):
     profile = BusinessProfileService.get_profile(db, current_user.id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Business profile not found")
     return profile
 
 
