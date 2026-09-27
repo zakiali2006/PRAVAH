@@ -37,6 +37,8 @@ class BusinessProfileBase(BaseModel):
     industry_sector: str
     registration_type: str
     address: Optional[str] = None
+    gstin: Optional[str] = None
+    date_of_incorporation: Optional[str] = None
 
 
 class BusinessProfileCreate(BusinessProfileBase):
@@ -49,6 +51,8 @@ class BusinessProfileUpdate(BaseModel):
     industry_sector: Optional[str] = None
     registration_type: Optional[str] = None
     address: Optional[str] = None
+    gstin: Optional[str] = None
+    date_of_incorporation: Optional[str] = None
 
 
 class BusinessProfileResponse(BusinessProfileBase):

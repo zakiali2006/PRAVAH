@@ -18,6 +18,8 @@ class BusinessProfile(Base, BaseMixin):
         String, nullable=False
     )  # e.g. Private Limited, Proprietorship
     address = Column(String, nullable=True)
+    gstin = Column(String, nullable=True)
+    date_of_incorporation = Column(String, nullable=True)
 
 
 class FactoryUnit(Base, BaseMixin):

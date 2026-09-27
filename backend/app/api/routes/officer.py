@@ -23,6 +23,159 @@ def get_officer_queue(
     return application_repo.get_pending_for_officer(db, current_user.id)
 
 
+@router.get("/documents", response_model=List[dict])
+def get_officer_documents(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _: bool = Depends(allow_officers),
+):
+    from app.models.document import Document
+
+    docs = db.query(Document).all()  # For demo, return all docs
+    # Or docs that are tied to applications for this officer, but for demo this is fine
+    from app.schemas.document import DocumentOut
+
+    return [DocumentOut.model_validate(d).model_dump() for d in docs]
+
+
+@router.get("/duplicates")
+def get_duplicate_alerts(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _: bool = Depends(allow_officers),
+):
+    from app.models.application import Application
+    from app.models.business import BusinessProfile
+
+    apps = db.query(Application).filter(Application.status != "draft").all()
+
+    alerts = []
+    seen_user_service = {}
+    seen_pan_service = {}
+
+    for app in apps:
+        business = None
+        if app.business_id:
+            business = (
+                db.query(BusinessProfile)
+                .filter(BusinessProfile.id == app.business_id)
+                .first()
+            )
+
+        key_user_svc = (app.user_id, app.service_name)
+        if key_user_svc in seen_user_service:
+            prev_app = seen_user_service[key_user_svc]
+            prev_biz = None
+            if prev_app.business_id:
+                prev_biz = (
+                    db.query(BusinessProfile)
+                    .filter(BusinessProfile.id == prev_app.business_id)
+                    .first()
+                )
+
+            alert_id = f"DUP-{app.id[-4:]}"
+            alerts.append(
+                {
+                    "id": alert_id.replace("/", ""),
+                    "type": "exact_user_service",
+                    "match_score": 100,
+                    "app1_id": prev_app.id,
+                    "app2_id": app.id,
+                    "date": (
+                        app.created_at.strftime("%m/%d/%Y") if app.created_at else ""
+                    ),
+                    "app1_details": {
+                        "applicant_name": prev_app.applicant_name,
+                        "entity_name": (
+                            prev_biz.company_name if prev_biz else "Unknown Entity"
+                        ),
+                        "pan": prev_biz.pan_number if prev_biz else "...",
+                        "address": prev_biz.address if prev_biz else "...",
+                    },
+                    "app2_details": {
+                        "applicant_name": app.applicant_name,
+                        "entity_name": (
+                            business.company_name if business else "Unknown Entity"
+                        ),
+                        "pan": business.pan_number if business else "...",
+                        "address": business.address if business else "...",
+                    },
+                }
+            )
+        else:
+            seen_user_service[key_user_svc] = app
+
+        if business and business.pan_number:
+            key_pan_svc = (business.pan_number, app.service_name)
+            if key_pan_svc in seen_pan_service:
+                prev_app = seen_pan_service[key_pan_svc]
+                if prev_app.id != app.id and prev_app.user_id != app.user_id:
+                    prev_biz = (
+                        db.query(BusinessProfile)
+                        .filter(BusinessProfile.id == prev_app.business_id)
+                        .first()
+                    )
+                    alert_id = f"DUP-{app.id[-4:]}P"
+                    alerts.append(
+                        {
+                            "id": alert_id.replace("/", ""),
+                            "type": "pan_match_different_user",
+                            "match_score": 95,
+                            "app1_id": prev_app.id,
+                            "app2_id": app.id,
+                            "date": (
+                                app.created_at.strftime("%m/%d/%Y")
+                                if app.created_at
+                                else ""
+                            ),
+                            "app1_details": {
+                                "applicant_name": prev_app.applicant_name,
+                                "entity_name": (
+                                    prev_biz.company_name
+                                    if prev_biz
+                                    else "Unknown Entity"
+                                ),
+                                "pan": prev_biz.pan_number if prev_biz else "...",
+                                "address": prev_biz.address if prev_biz else "...",
+                            },
+                            "app2_details": {
+                                "applicant_name": app.applicant_name,
+                                "entity_name": (
+                                    business.company_name
+                                    if business
+                                    else "Unknown Entity"
+                                ),
+                                "pan": business.pan_number if business else "...",
+                                "address": business.address if business else "...",
+                            },
+                        }
+                    )
+            else:
+                seen_pan_service[key_pan_svc] = app
+
+    return alerts
+
+
+from pydantic import BaseModel
+
+
+class ResolveDuplicateRequest(BaseModel):
+    action: str
+
+
+@router.post("/duplicates/{alert_id}/resolve")
+def resolve_duplicate_alert(
+    alert_id: str,
+    req: ResolveDuplicateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _: bool = Depends(allow_officers),
+):
+    # In a real app, update the database alert status.
+    # We'll just return success for the demo.
+    return {"status": "success", "action": req.action, "alert_id": alert_id}
+
+
 @router.post(
     "/applications/{application_id:path}/status", response_model=ApplicationResponse
 )

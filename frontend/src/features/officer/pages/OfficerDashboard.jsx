@@ -26,9 +26,38 @@ export function OfficerDashboard() {
         />
         <div className="flex gap-2 p-1 bg-gray-100 rounded-lg border border-gray-200">
           <button onClick={() => setActiveTab('workload')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-all ${activeTab === 'workload' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>Workload Queue</button>
+          <button onClick={() => setActiveTab('sla')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-all flex items-center gap-2 ${activeTab === 'sla' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+            <Clock size={16} /> SLA Dashboard
+          </button>
+          <button onClick={() => navigate('/officer/duplicates')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-all flex items-center gap-2 text-gray-500 hover:text-gray-700`}>
+            <Cpu size={16} /> Duplicates
+          </button>
           <button onClick={() => setActiveTab('fraud')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-all flex items-center gap-2 ${activeTab === 'fraud' ? 'bg-white shadow-sm text-red-600' : 'text-gray-500 hover:text-gray-700'}`}>
             <ShieldAlert size={16} /> Fraud Alerts
           </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs font-bold text-gray-500 mb-1 uppercase">Total Assigned</div>
+          <div className="text-2xl font-black text-gray-900">{queue.length}</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs font-bold text-gray-500 mb-1 uppercase">Pending</div>
+          <div className="text-2xl font-black text-blue-600">{queue.filter(a => a.status === 'submitted' || a.status === 'pending').length}</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs font-bold text-gray-500 mb-1 uppercase">In Review</div>
+          <div className="text-2xl font-black text-amber-500">{queue.filter(a => a.status === 'in_review' || a.status === 'processing').length}</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs font-bold text-gray-500 mb-1 uppercase">High Risk</div>
+          <div className="text-2xl font-black text-red-600">{queue.filter(a => a.ai_score > 65).length}</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs font-bold text-gray-500 mb-1 uppercase">Avg Risk Score</div>
+          <div className="text-2xl font-black text-gray-900">{queue.length > 0 ? Math.round(queue.reduce((acc, curr) => acc + (curr.ai_score || 0), 0) / queue.length) : 0}</div>
         </div>
       </div>
 
@@ -88,7 +117,7 @@ export function OfficerDashboard() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Btn variant={i === 0 ? "navy" : "outline"} className={i===0 ? "bg-red-600 hover:bg-red-700 border-transparent text-white" : ""} onClick={() => navigate("/officer/queue")}>
+                        <Btn variant={i === 0 ? "navy" : "outline"} onClick={() => navigate(`/officer/queue?processId=${encodeURIComponent(item.id)}`)}>
                           Process
                         </Btn>
                       </td>

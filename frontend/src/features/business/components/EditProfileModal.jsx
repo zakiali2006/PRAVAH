@@ -9,7 +9,9 @@ export function EditProfileModal({ profile, onClose, onSave }) {
     cin_number: profile?.cin_number || '',
     industry_sector: profile?.industry_sector || '',
     registration_type: profile?.registration_type || 'Private Limited',
-    address: profile?.address || ''
+    address: profile?.address || '',
+    gstin: profile?.gstin || '',
+    date_of_incorporation: profile?.date_of_incorporation || ''
   });
 
   const handleSubmit = async (e) => {
@@ -92,6 +94,29 @@ export function EditProfileModal({ profile, onClose, onSave }) {
                 <option value="Proprietorship">Proprietorship</option>
                 <option value="Partnership">Partnership</option>
               </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">GSTIN</label>
+              <input
+                type="text"
+                value={formData.gstin}
+                onChange={(e) => setFormData({ ...formData, gstin: e.target.value })}
+                className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase font-mono"
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Date of Incorporation</label>
+              <input
+                type="date"
+                value={formData.date_of_incorporation}
+                onChange={(e) => setFormData({ ...formData, date_of_incorporation: e.target.value })}
+                className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+                disabled={loading}
+              />
             </div>
           </div>
 

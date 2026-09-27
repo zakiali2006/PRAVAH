@@ -33,7 +33,9 @@ def create_service(service_in: ServiceCreate, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Service ID already exists")
 
-    new_service = Service(**service_in.model_dump())
+    valid_keys = {"service_id", "name", "department", "fee", "status"}
+    create_data = {k: v for k, v in service_in.model_dump().items() if k in valid_keys}
+    new_service = Service(**create_data)
     db.add(new_service)
     db.commit()
     db.refresh(new_service)

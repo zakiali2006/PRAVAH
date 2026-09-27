@@ -90,6 +90,7 @@ export const createApplication = async (data) => {
   return response.data;
 };
 
+
 export const getOfficerQueue = async () => {
   const response = await apiClient.get('/officer/queue');
   return response.data;
@@ -132,5 +133,10 @@ export const createFactoryUnit = async (data) => {
 
 export const getMyDocuments = async () => {
   const response = await apiClient.get('/documents');
+  return response.data;
+};
+
+export const syncDigiLockerAPI = async () => {
+  const response = await apiClient.post('/documents/digilocker/sync');
   return response.data;
 };

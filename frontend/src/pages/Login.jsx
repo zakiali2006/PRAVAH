@@ -113,7 +113,7 @@ export function Login() {
               autoComplete="new-password"
             />
           </div>
-          <Btn className="w-full mt-4" disabled={loading}>
+          <Btn type="submit" className="w-full mt-4" disabled={loading}>
             {loading ? "Logging in..." : `Login as ${roleConfigs.find(r => r.id === activeRole)?.label}`}
           </Btn>
         </form>

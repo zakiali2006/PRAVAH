@@ -182,6 +182,50 @@ def delete_document(
     return success_response(None, "Document deleted successfully")
 
 
+@router.post("/digilocker/sync", response_model=dict)
+def sync_digilocker(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # Mock syncing from DigiLocker by creating 2 verified document records
+    docs_to_create = [
+        Document(
+            filename="aadhaar_mock.pdf",
+            original_name="Aadhaar Card (Masked)",
+            mime_type="application/pdf",
+            size_bytes=460800,  # 450 KB
+            file_path="/mock/aadhaar_mock.pdf",
+            status="VALID",
+            validation_status="VALID",
+            document_type_id=1,
+            uploader_id=current_user.id,
+            extracted_data={
+                "verification": {"confidence": 1.0, "matches": ["identity_verified"]}
+            },
+        ),
+        Document(
+            filename="pan_mock.pdf",
+            original_name="PAN Card",
+            mime_type="application/pdf",
+            size_bytes=327680,  # 320 KB
+            file_path="/mock/pan_mock.pdf",
+            status="VALID",
+            validation_status="VALID",
+            document_type_id=1,
+            uploader_id=current_user.id,
+            extracted_data={
+                "verification": {
+                    "confidence": 1.0,
+                    "matches": ["tax_identity_verified"],
+                }
+            },
+        ),
+    ]
+    db.add_all(docs_to_create)
+    db.commit()
+    return success_response(None, "DigiLocker synced successfully")
+
+
 @router.post("/{document_id}/validate", response_model=dict)
 def validate_document(
     document_id: int,
@@ -192,7 +236,12 @@ def validate_document(
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         return error_response(ErrorCode.RESOURCE_NOT_FOUND, "Document not found", 404)
-    if doc.uploader_id != current_user.id:
+
+    user_role = (current_user.role or "").upper()
+    if doc.uploader_id != current_user.id and user_role not in [
+        "OFFICER",
+        "SYSTEM_ADMIN",
+    ]:
         return error_response(
             ErrorCode.FORBIDDEN, "Not authorized to access this document", 403
         )
@@ -212,7 +261,13 @@ def validate_document(
 
         # Phase 4: OCR Text Extraction
         absolute_file_path = storage_service.get_file_path(doc.file_path)
-        raw_text = extract_raw_text(absolute_file_path, doc.mime_type)
+        try:
+            raw_text = extract_raw_text(absolute_file_path, doc.mime_type)
+        except FileNotFoundError:
+            if "mock" in str(doc.file_path).lower():
+                raw_text = "Mock document text extraction successful."
+            else:
+                raise
 
         # Phase 5: Structured Data Extraction
         structured_data = extract_structured_data(raw_text, doc_type_name)

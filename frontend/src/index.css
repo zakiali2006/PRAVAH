@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-.underline-links a, .underline-links .is-link {
+.a11y-highlight-links a, 
+.a11y-highlight-links button,
+.a11y-highlight-links [role="button"] {
   text-decoration: underline !important;
+  text-decoration-thickness: 2px !important;
+  text-underline-offset: 4px !important;
+  outline: 2px solid #2563eb !important;
+  background-color: rgba(255, 255, 0, 0.1) !important;
+}
+
+.a11y-high-contrast {
+  filter: contrast(130%) grayscale(10%) saturate(80%);
 }
