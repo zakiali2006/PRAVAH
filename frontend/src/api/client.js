@@ -139,3 +139,73 @@ export const syncDigiLockerAPI = async () => {
   const response = await apiClient.post('/documents/digilocker/sync');
   return response.data;
 };
+
+// -----------------------------------------------------------------------
+// Officer Analytics
+// -----------------------------------------------------------------------
+export const getSLADashboard = async () => {
+  const response = await apiClient.get('/officer/sla-dashboard');
+  return response.data;
+};
+
+export const getOfficerWorkload = async () => {
+  const response = await apiClient.get('/officer/workload');
+  return response.data;
+};
+
+export const getOfficerDuplicates = async () => {
+  const response = await apiClient.get('/officer/duplicates');
+  return response.data;
+};
+
+export const recommendAssignment = async (applicationId) => {
+  const response = await apiClient.post(`/officer/applications/${applicationId}/recommend-assignment`);
+  return response.data;
+};
+
+// -----------------------------------------------------------------------
+// Grievances
+// -----------------------------------------------------------------------
+export const submitGrievance = async (data) => {
+  const response = await apiClient.post('/grievances/', data);
+  return response.data;
+};
+
+export const getGrievances = async () => {
+  const response = await apiClient.get('/grievances/');
+  return response.data;
+};
+
+export const getGrievance = async (id) => {
+  const response = await apiClient.get(`/grievances/${id}`);
+  return response.data;
+};
+
+export const closeGrievance = async (id, resolution_notes) => {
+  const response = await apiClient.post(`/grievances/${id}/close`, { resolution_notes });
+  return response.data;
+};
+
+// -----------------------------------------------------------------------
+// Notifications
+// -----------------------------------------------------------------------
+export const getNotifications = async () => {
+  const response = await apiClient.get('/notifications/');
+  return response.data;
+};
+
+export const getUnreadCount = async () => {
+  const response = await apiClient.get('/notifications/unread-count');
+  return response.data;
+};
+
+export const markNotificationRead = async (id) => {
+  const response = await apiClient.post(`/notifications/${id}/read`);
+  return response.data;
+};
+
+export const markAllNotificationsRead = async () => {
+  const response = await apiClient.post('/notifications/read-all');
+  return response.data;
+};
+

@@ -43,3 +43,13 @@ api_router.include_router(officer.router, prefix="/officer", tags=["Officer"])
 api_router.include_router(
     business.router, prefix="/business-profile", tags=["Business"]
 )
+
+from app.api.routes import grievances, notifications
+
+api_router.include_router(
+    grievances.router, prefix="/grievances", tags=["Grievances"]
+)
+api_router.include_router(
+    notifications.router, prefix="/notifications", tags=["Notifications"]
+)
+

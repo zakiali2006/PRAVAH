@@ -5,7 +5,14 @@ from app.models.user import User
 from app.api.deps import get_current_user, RoleChecker
 from app.schemas.application import ApplicationStatusUpdate, ApplicationResponse
 from app.schemas.risk import RiskAssessmentResponse
+from app.schemas.officer import (
+    SLADashboardResponse,
+    WorkloadResponse,
+    DuplicateDetectionResponse,
+    RecommendAssignmentResponse,
+)
 from app.services.application_service import ApplicationService
+from app.services.officer_analytics_service import officer_analytics_service
 from app.repositories.application_repo import application_repo
 from typing import List
 
@@ -79,3 +86,59 @@ def recalculate_application_risk(
         raise HTTPException(
             status_code=500, detail=f"Failed to recalculate risk score: {str(e)}"
         )
+
+
+# -----------------------------------------------------------------------
+# NEW: SLA Dashboard
+# -----------------------------------------------------------------------
+@router.get("/sla-dashboard", response_model=SLADashboardResponse)
+def get_sla_dashboard(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _: bool = Depends(allow_officers),
+):
+    """Aggregate SLA statistics across all active applications."""
+    return officer_analytics_service.get_sla_dashboard(db)
+
+
+# -----------------------------------------------------------------------
+# NEW: Workload Summary
+# -----------------------------------------------------------------------
+@router.get("/workload", response_model=WorkloadResponse)
+def get_workload(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _: bool = Depends(allow_officers),
+):
+    """Get workload statistics for the current officer."""
+    return officer_analytics_service.get_workload(db, current_user.id)
+
+
+# -----------------------------------------------------------------------
+# NEW: Duplicate Detection
+# -----------------------------------------------------------------------
+@router.get("/duplicates", response_model=DuplicateDetectionResponse)
+def get_duplicates(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _: bool = Depends(allow_officers),
+):
+    """Detect potential duplicate applications using exact + fuzzy matching."""
+    return officer_analytics_service.detect_duplicates(db)
+
+
+# -----------------------------------------------------------------------
+# NEW: Smart Workload Recommendation
+# -----------------------------------------------------------------------
+@router.post(
+    "/applications/{application_id:path}/recommend-assignment",
+    response_model=RecommendAssignmentResponse,
+)
+def recommend_assignment(
+    application_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _: bool = Depends(allow_officers),
+):
+    """AI-powered officer assignment recommendation based on workload."""
+    return officer_analytics_service.recommend_assignment(db, application_id)

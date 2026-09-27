@@ -10,3 +10,6 @@ from app.models.document_chunk import DocumentChunk
 from app.models.business import BusinessProfile, FactoryUnit
 from app.models.service import Service
 from app.models.risk import ApplicationRiskScore
+from app.models.grievance import Grievance
+from app.models.notification import Notification
+
