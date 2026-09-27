@@ -6,29 +6,26 @@ export function EditProfileModal({ profile, onClose, onSave }) {
   const [formData, setFormData] = useState({
     company_name: profile?.company_name || '',
     pan_number: profile?.pan_number || '',
+    cin_number: profile?.cin_number || '',
+    industry_sector: profile?.industry_sector || '',
+    registration_type: profile?.registration_type || 'Private Limited',
+    address: profile?.address || '',
     gstin: profile?.gstin || '',
-    industry: profile?.industry || '',
-    investment_value: profile?.investment_value || ''
+    date_of_incorporation: profile?.date_of_incorporation || ''
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      await onSave(formData);
-      onClose();
-    } catch (err) {
-      console.error('Save failed:', err);
-    } finally {
-      setLoading(false);
-    }
+    await onSave(formData);
+    setLoading(false);
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white max-w-lg w-full rounded-2xl p-6 shadow-2xl border border-slate-200">
         <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
-          <h3 className="font-extrabold text-lg text-slate-900">{profile ? 'Edit Primary Entity Profile' : 'Create Business Profile'}</h3>
+          <h3 className="font-extrabold text-lg text-slate-900">{profile ? 'Edit Business Profile' : 'Create Business Profile'}</h3>
           <button onClick={onClose} disabled={loading} className="text-slate-400 hover:text-slate-600 disabled:opacity-50">
             <X size={20} />
           </button>
@@ -60,38 +57,76 @@ export function EditProfileModal({ profile, onClose, onSave }) {
               />
             </div>
             <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">CIN Number</label>
+              <input
+                type="text"
+                value={formData.cin_number}
+                onChange={(e) => setFormData({ ...formData, cin_number: e.target.value })}
+                className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase font-mono"
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Industry Sector</label>
+              <input
+                type="text"
+                value={formData.industry_sector}
+                onChange={(e) => setFormData({ ...formData, industry_sector: e.target.value })}
+                className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+                required
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Registration Type</label>
+              <select
+                value={formData.registration_type}
+                onChange={(e) => setFormData({ ...formData, registration_type: e.target.value })}
+                className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium bg-white"
+                disabled={loading}
+              >
+                <option value="Private Limited">Private Limited</option>
+                <option value="Public Limited">Public Limited</option>
+                <option value="LLP">LLP</option>
+                <option value="Proprietorship">Proprietorship</option>
+                <option value="Partnership">Partnership</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <label className="block text-sm font-bold text-slate-700 mb-1">GSTIN</label>
               <input
                 type="text"
                 value={formData.gstin}
                 onChange={(e) => setFormData({ ...formData, gstin: e.target.value })}
                 className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase font-mono"
-                required
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Date of Incorporation</label>
+              <input
+                type="date"
+                value={formData.date_of_incorporation}
+                onChange={(e) => setFormData({ ...formData, date_of_incorporation: e.target.value })}
+                className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium"
                 disabled={loading}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">Industry Sector</label>
-            <input
-              type="text"
-              value={formData.industry}
-              onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+            <label className="block text-sm font-bold text-slate-700 mb-1">Registered Address</label>
+            <textarea
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">Total Investment</label>
-            <input
-              type="text"
-              value={formData.investment_value}
-              onChange={(e) => setFormData({ ...formData, investment_value: e.target.value })}
-              placeholder="e.g. ₹ 450 Crores"
-              className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+              rows={2}
               disabled={loading}
             />
           </div>

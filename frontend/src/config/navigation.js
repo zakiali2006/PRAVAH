@@ -64,6 +64,13 @@ export const NAVIGATION = {
   [ROLES.POLICY_ADMIN]: [
     { label: "Dashboard", path: "policy/dashboard" },
     {
+      label: "Service Management",
+      subLinks: [
+        { label: "Manage Services", path: "policy/services" },
+        { label: "Configure Workflows", path: "policy/workflows" },
+      ]
+    },
+    {
       label: "Analytics",
       subLinks: [
         { label: "Bottleneck Analytics", path: "policy/bottlenecks" },

@@ -28,49 +28,18 @@ from app.api.routes import (
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 api_router.include_router(audit.router, prefix="/audit", tags=["Audit System"])
 
-# from app.api.routes import services
-# api_router.include_router(services.router, prefix="/services", tags=["Services"])
+from app.api.routes import services
 
-# from app.api.routes import applications
-# api_router.include_router(
-#     applications.router, prefix="/applications", tags=["Applications"]
-# )
+api_router.include_router(services.router, prefix="/services", tags=["Services"])
 
-# from app.api.routes import incentives
-# api_router.include_router(
-#     incentives.router, prefix="/incentives", tags=["Incentives"]
-# )
+from app.api.routes import applications, officer, business, chat, documents
 
-# from app.api.routes import grievances
-# api_router.include_router(
-#     grievances.router, prefix="/grievances", tags=["Grievances"]
-# )
-
-# from app.api.routes import dashboard
-# api_router.include_router(
-#     dashboard.router, prefix="/dashboard", tags=["Dashboard"]
-# )
-
-from app.api.routes import chat
 api_router.include_router(chat.router, prefix="/chat", tags=["Chat"])
-
-from app.api.routes import documents
-from app.api.routes import business_profile
-from app.api.routes import factory_unit
-from app.api.routes import service
-from app.api.routes import application
-from app.api.routes import wizard
-from app.api.routes import caf
-
 api_router.include_router(documents.router, prefix="/documents", tags=["Documents"])
-api_router.include_router(business_profile.router, prefix="/business-profile", tags=["Business Profile"])
-api_router.include_router(factory_unit.router, prefix="/factory-units", tags=["Factory Units"])
-api_router.include_router(service.router, prefix="/services", tags=["Service Catalogue"])
-api_router.include_router(application.router, tags=["Applications"])
-api_router.include_router(wizard.router, prefix="/wizard", tags=["Investor Wizard"])
-api_router.include_router(caf.router, prefix="/caf", tags=["CAF Base Data Layer"])
-
-# from app.api.routes import officer
-# api_router.include_router(
-#     officer.router, prefix="/officer", tags=["Officer"]
-# )
+api_router.include_router(
+    applications.router, prefix="/applications", tags=["Applications"]
+)
+api_router.include_router(officer.router, prefix="/officer", tags=["Officer"])
+api_router.include_router(
+    business.router, prefix="/business-profile", tags=["Business"]
+)

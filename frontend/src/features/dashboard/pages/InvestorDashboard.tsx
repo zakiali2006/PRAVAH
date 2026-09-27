@@ -1,330 +1,306 @@
-import React, { useState } from 'react';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
-} from 'recharts';
-import {
-  LayoutDashboard, FileText, Users, Calculator,
-  HelpCircle, AlertTriangle, MessageSquare, Search,
-  Calendar as CalendarIcon, Filter, BellRing, Sparkles, ChevronRight, CheckCircle2,
-  Clock, Flame
-} from 'lucide-react';
-import { C } from '../../../constants/theme';
-import { useTranslation } from '../../../contexts/TranslationContext';
+import React, { useMemo } from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+import { LayoutDashboard, Package, CheckSquare, FileText, CheckCircle2, PieChart as PieChartIcon, ArrowRight, User, File, Factory, Zap, Award, Check, Clock } from 'lucide-react';
+import { useApplications, useApplicationTracking } from '../../../hooks/useApplications';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
-const lineData = [
-  { name: 'Jan', Applications: 1000, Disposed: 800, Services: 900 },
-  { name: 'Feb', Applications: 2000, Disposed: 1500, Services: 1800 },
-  { name: 'Mar', Applications: 1500, Disposed: 1200, Services: 1600 },
-  { name: 'Apr', Applications: 2000, Disposed: 1800, Services: 2100 },
-  { name: 'May', Applications: 18000, Disposed: 15000, Services: 17000 },
-  { name: 'Jun', Applications: 35000, Disposed: 30000, Services: 31000 },
-  { name: 'Jul', Applications: 38000, Disposed: 35000, Services: 36000 },
-  { name: 'Aug', Applications: 42000, Disposed: 39000, Services: 40000 },
-  { name: 'Sep', Applications: 15000, Disposed: 14000, Services: 14500 },
-];
-
-const grievancesData = [
-  { name: 'Replied', value: 400 },
-  { name: 'Closed', value: 300 },
-  { name: 'Pending', value: 300 },
-  { name: 'Total', value: 1000 },
-];
-
-const queriesData = [
-  { name: 'Total', value: 800 },
-  { name: 'Pending', value: 200 },
-  { name: 'Closed', value: 400 },
-  { name: 'Replied', value: 200 },
-];
-
-const feedbackData = [
-  { name: 'Negative', value: 10 },
-  { name: 'Neutral', value: 20 },
-  { name: 'Positive', value: 70 },
-];
-
-const PIE_COLORS = {
-  Grievances: ['#047857', '#1E3A8A', '#D97706', '#F59E0B'],
-  Queries: ['#F97316', '#FACC15', '#0F766E', '#1D4ED8'],
-  Feedback: ['#0369A1', '#0F766E', '#EA580C']
+const getStageIcon = (title) => {
+  const t = title.toLowerCase();
+  if (t.includes('document')) return <File size={16} />;
+  if (t.includes('scrutiny')) return <User size={16} />;
+  if (t.includes('approval')) return <Award size={16} />;
+  return <Check size={16} />;
 };
 
 export const InvestorDashboard = () => {
-  const { t } = useTranslation();
+  const { applications = [] } = useApplications();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('count');
+  
+  const recentApp = applications.length > 0 ? [...applications].sort((a, b) => new Date(b.created_at || b.submitted_at).getTime() - new Date(a.created_at || a.submitted_at).getTime())[0] : null;
+  const { application: trackedApp } = useApplicationTracking(recentApp?.id);
+
+  const totalApps = applications.length;
+  const approved = applications.filter(a => a.status?.toLowerCase() === 'approved').length;
+  const inProgress = applications.filter(a => ['scrutiny', 'final_approval', 'clarification'].includes(a.status?.toLowerCase())).length;
+  const underReview = applications.filter(a => a.status?.toLowerCase() === 'document verification').length;
+  const pending = applications.filter(a => ['submitted', 'pending', 'draft'].includes(a.status?.toLowerCase())).length;
+
+  const pieData = [
+    { name: 'Approved', value: approved, color: '#10b981' },
+    { name: 'In Progress', value: inProgress, color: '#3b82f6' },
+    { name: 'Under Review', value: underReview, color: '#f59e0b' },
+    { name: 'Pending', value: pending, color: '#ef4444' },
+  ].filter(d => d.value > 0);
+
+  if (pieData.length === 0) {
+    pieData.push({ name: 'No Apps', value: 1, color: '#e2e8f0' });
+  }
+
+  // Timeline stages
+  const defaultStages = [
+    { name: "Application Submitted", status: "completed", icon: <Check size={18} className="stroke-[3]" /> },
+    { name: "Document Verification", status: "in-progress", icon: <File size={18} /> },
+    { name: "Department Scrutiny", status: "pending", icon: <User size={18} /> },
+    { name: "Final Approval", status: "pending", icon: <Award size={18} /> }
+  ];
+
+  const stages = trackedApp?.stages || defaultStages;
+  const displayStages = stages.slice(0, 4); // Limit to 4 to fit all screens perfectly without squishing.
+  
+  // Find current active step index for the progress bar calculation
+  const currentStepIdx = displayStages.findIndex(st => {
+    const stat = st.status ? st.status.toLowerCase() : 'pending';
+    return stat !== 'completed' && stat !== 'approved';
+  });
+  
+  const activeIndex = currentStepIdx === -1 ? displayStages.length : currentStepIdx;
+  const progressPercentage = displayStages.length > 1 ? (activeIndex / (displayStages.length - 1)) * 100 : 0;
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-6 pb-32 font-sans flex flex-col xl:flex-row gap-6">
+    <div className="w-full h-full flex flex-col p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6 max-w-[1400px] mx-auto overflow-y-auto overflow-x-hidden">
       
-      {/* Main Dashboard Area (Left) */}
-      <div className="flex-1 flex flex-col gap-6 min-w-0">
+      {/* Banner */}
+      <div className="relative bg-gradient-to-br from-blue-50 via-indigo-50/50 to-indigo-50 border border-blue-100/80 rounded-[2rem] p-6 md:p-8 lg:p-10 shadow-sm flex flex-col md:flex-row items-center justify-between shrink-0 overflow-hidden">
         
-        {/* AI Next Best Action Banner (Redesigned as Vertical Stack Alert) */}
-        <div className="bg-white border-l-4 border-l-blue-600 border border-y-slate-200 border-r-slate-200 rounded-xl p-5 shadow-sm flex flex-col gap-4">
-          <div className="flex items-start justify-between gap-4">
+        {/* Subtle decorative background blur */}
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="z-10 w-full md:max-w-2xl">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+            className="flex items-center gap-2 text-slate-600 font-bold mb-2 text-sm md:text-base"
+          >
+            <span className="text-xl">👋</span> Welcome to PRAVAH
+          </motion.div>
+          <motion.h1 
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 leading-[1.1] mb-3 tracking-tight"
+          >
+            Simpler Approvals.<br className="hidden sm:block"/>Stronger Businesses.
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-slate-500 text-sm md:text-base font-medium leading-relaxed max-w-md"
+          >
+            Your single platform for government services, approvals and compliance in Maharashtra.
+          </motion.p>
+        </div>
+        
+        {/* Premium Abstract Graphic on Right */}
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.3 }}
+          className="hidden lg:flex absolute right-12 top-0 bottom-0 items-center justify-center pointer-events-none"
+        >
+          <div className="relative w-80 h-full flex items-end justify-center pb-8">
+            <div className="w-12 h-24 bg-white/60 backdrop-blur-sm rounded-t-xl mx-1.5 border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"></div>
+            <div className="w-16 h-40 bg-slate-200/80 backdrop-blur-md rounded-t-xl mx-1.5 relative shadow-[0_8px_30px_rgb(0,0,0,0.08)] z-10 border border-white/90"></div>
+            <div className="w-14 h-32 bg-indigo-100/80 backdrop-blur-sm rounded-t-xl mx-1.5 border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.06)]"></div>
+            
+            <div className="absolute top-1/2 right-0 translate-x-4 -translate-y-12 z-20">
+              <div className="bg-white/95 backdrop-blur-xl border border-slate-100 p-5 rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] transform rotate-2">
+                <p className="font-bold text-slate-800 text-base leading-snug tracking-tight">
+                  "Enabling<br/>Businesses,<br/>Strengthening<br/>Maharashtra"
+                </p>
+                <div className="w-10 h-1.5 bg-orange-500 rounded-full mt-3"></div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 shrink-0">
+        
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="bg-white border border-slate-200 rounded-[2rem] p-5 lg:p-6 flex flex-col justify-center shadow-sm">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] shrink-0">
+              <LayoutDashboard size={20} />
+            </div>
+            <h3 className="font-bold text-slate-800 text-sm lg:text-base leading-tight">Dashboard<br className="hidden lg:block"/> Overview</h3>
+          </div>
+          <p className="text-xs text-slate-500 font-medium leading-relaxed">Key numbers for your business journey</p>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }} className="bg-[#f8faff] border border-blue-100 rounded-[2rem] p-5 lg:p-6 flex items-center justify-between hover:shadow-md transition-all duration-300 group">
+          <div>
+            <p className="text-[10px] font-black tracking-widest text-slate-500 uppercase mb-1">TOTAL SERVICES</p>
+            <h2 className="text-3xl lg:text-4xl font-black text-slate-900">179</h2>
+          </div>
+          <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-blue-100/80 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shrink-0">
+            <Package size={24} />
+          </div>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.3 }} className="bg-[#f5fcf7] border border-green-100 rounded-[2rem] p-5 lg:p-6 flex items-center justify-between hover:shadow-md transition-all duration-300 group">
+          <div>
+            <p className="text-[10px] font-black tracking-widest text-slate-500 uppercase mb-1">APPROVALS</p>
+            <h2 className="text-3xl lg:text-4xl font-black text-slate-900">48</h2>
+          </div>
+          <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-green-100/80 text-green-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shrink-0">
+            <CheckSquare size={24} />
+          </div>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.4 }} className="bg-[#fcfaff] border border-purple-100 rounded-[2rem] p-5 lg:p-6 flex items-center justify-between hover:shadow-md transition-all duration-300 group">
+          <div>
+            <p className="text-[10px] font-black tracking-widest text-slate-500 uppercase mb-1">APPLICATIONS</p>
+            <h2 className="text-3xl lg:text-4xl font-black text-slate-900">{totalApps}</h2>
+          </div>
+          <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-purple-100/80 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shrink-0">
+            <FileText size={24} />
+          </div>
+        </motion.div>
+
+      </div>
+
+      {/* Main Bottom Section */}
+      <div className="flex flex-col lg:flex-row gap-4 md:gap-6 shrink-0 min-h-[300px]">
+        
+        {/* Premium Roadmap (Left) */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className="flex-[2] bg-white border border-slate-200 rounded-[2rem] p-6 lg:p-8 shadow-sm flex flex-col justify-between relative overflow-hidden">
+          
+          <div className="flex items-center justify-between mb-8 relative z-10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-blue-600">
-                <Sparkles size={20} />
+              <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] shrink-0">
+                <CheckCircle2 size={20} />
               </div>
               <div>
-                <h2 className="text-slate-900 font-bold text-base flex items-center gap-2">
-                  AI Next-Best Action
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-600 text-white shadow-sm tracking-wide">High Priority</span>
-                </h2>
+                <h3 className="font-bold text-slate-900 text-lg lg:text-xl tracking-tight">Your Approval Roadmap</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">Track your journey from application to approval</p>
               </div>
             </div>
-          </div>
-          <p className="text-slate-600 text-sm leading-relaxed max-w-4xl pl-13">
-            Your <strong className="text-slate-900">Consent to Establish (MPCB)</strong> application is at 84% SLA risk due to a pending document query. Submit the required "Environmental Audit Report" within the next 48 hours to avoid an automatic breach.
-          </p>
-          <div className="flex items-center gap-3 justify-end pt-2 border-t border-slate-100">
-            <button className="px-4 py-2 bg-white text-slate-700 font-semibold text-sm rounded-lg border border-slate-300 hover:bg-slate-50 transition-colors shadow-sm">
-              View Roadmap
-            </button>
-            <button onClick={() => navigate('/app/applications')} className="px-4 py-2 bg-blue-600 text-white font-semibold text-sm rounded-lg shadow-sm hover:bg-blue-700 transition-colors">
-              Resolve Query
+            <button onClick={() => navigate('/app/applications')} className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors bg-blue-50/80 hover:bg-blue-100 px-4 py-2 rounded-full shrink-0">
+              <span className="hidden sm:inline">View Full</span> Roadmap <ArrowRight size={14} />
             </button>
           </div>
-        </div>
 
-        {/* Dashboard Header Row */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mt-2">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">{t.dash.title || "Dashboard Overview"}</h1>
-            <p className="text-sm text-slate-500 mt-1">{t.dash.sub || "Real-time insights and analytics for your organization"}</p>
-          </div>
-
-          {/* Filters */}
-          <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 flex flex-wrap sm:flex-nowrap items-end gap-2 shrink-0">
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wide px-1">From</label>
-              <div className="relative">
-                <CalendarIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="text" defaultValue="Jan 1, 2016" className="w-32 pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-blue-500" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wide px-1">To</label>
-              <div className="relative">
-                <CalendarIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="text" defaultValue="Sep 11, 2026" className="w-32 pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-blue-500" />
-              </div>
-            </div>
-            <button className="px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-blue-700 h-[30px]">
-              Apply
-            </button>
-          </div>
-        </div>
-
-            {/* 4 Cards */}
-            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0 text-blue-600">
-                    <LayoutDashboard size={20} />
-                  </div>
-                  <p className="text-sm font-semibold text-slate-500">{t.dash.totalServ || "Total Services"}</p>
-                </div>
-                <div>
-                  <h3 className="text-3xl font-black text-slate-800">179</h3>
-                </div>
-              </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0 text-indigo-600">
-                    <FileText size={20} />
-                  </div>
-                  <p className="text-sm font-semibold text-slate-500">{t.dash.apps || "Applications"}</p>
-                </div>
-                <div className="flex items-end justify-between">
-                  <h3 className="text-3xl font-black text-slate-800">5,67,805</h3>
-                  <span className="inline-block mb-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">+26.3%</span>
-                </div>
-              </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center shrink-0 text-amber-600">
-                    <AlertTriangle size={20} />
-                  </div>
-                  <p className="text-sm font-semibold text-slate-500">{t.dash.grievances || "Grievances"}</p>
-                </div>
-                <div>
-                  <h3 className="text-3xl font-black text-slate-800">5,473</h3>
-                </div>
-              </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center shrink-0 text-teal-600">
-                    <HelpCircle size={20} />
-                  </div>
-                  <p className="text-sm font-semibold text-slate-500">{t.dash.queries || "Queries"}</p>
-                </div>
-                <div>
-                  <h3 className="text-3xl font-black text-slate-800">4,858</h3>
-                </div>
-              </div>
-            </div>
-
-            {/* Application Data Tabs */}
-            <div className="bg-white border-b border-slate-200 px-2 flex items-end mt-4 rounded-t-xl overflow-hidden shadow-sm">
-              <button
-                onClick={() => setActiveTab('count')}
-                className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors ${activeTab === 'count' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-              >
-                Application Count
-              </button>
-              <button
-                onClick={() => setActiveTab('summary')}
-                className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors ${activeTab === 'summary' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-              >
-                Application Summary
-              </button>
-              <button
-                onClick={() => setActiveTab('wise')}
-                className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors ${activeTab === 'wise' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-              >
-                Application Wise Details
-              </button>
-            </div>
-
-            {/* Charts Area */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Main Line Chart */}
-              <div className="bg-white border border-slate-200 rounded-b-xl rounded-tr-xl p-4 shadow-sm col-span-2 xl:col-span-1 flex flex-col">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold text-slate-800 text-sm">Services Performance Trend</h3>
-                </div>
-                <div className="flex-1 min-h-[220px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={lineData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} dy={10} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} tickFormatter={(val) => val === 0 ? '0' : `${val / 1000}k`} />
-                      <RechartsTooltip />
-                      <Legend iconType="square" wrapperStyle={{ fontSize: '10px' }} />
-                      <Line type="monotone" dataKey="Applications" stroke="#f97316" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                      <Line type="monotone" dataKey="Disposed" stroke="#0ea5e9" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 xl:col-span-1">
-                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-bold text-slate-800 text-sm">Grievances Status</h3>
-                  </div>
-                  <div className="flex-1 min-h-[200px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={grievancesData} innerRadius={45} outerRadius={65} paddingAngle={2} dataKey="value" stroke="none">
-                          {grievancesData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={PIE_COLORS.Grievances[index % PIE_COLORS.Grievances.length]} />
-                          ))}
-                        </Pie>
-                        <RechartsTooltip />
-                        <Legend iconType="square" layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Premium Timeline Nodes */}
+          <div className="relative w-full flex justify-between items-start flex-1 mt-6 lg:mt-8 pb-4">
             
+            {/* Background Track Line */}
+            <div className="absolute top-[22px] lg:top-[26px] left-[10%] right-[10%] h-1.5 bg-slate-100 rounded-full z-0 overflow-hidden">
+               {/* Animated Progress Line */}
+               <motion.div 
+                 initial={{ width: 0 }} 
+                 animate={{ width: `${progressPercentage}%` }} 
+                 transition={{ duration: 1.2, ease: "easeOut" }}
+                 className="h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+               ></motion.div>
+            </div>
+
+            {displayStages.map((stage, idx) => {
+              const s = stage.status ? stage.status.toLowerCase() : 'pending';
+              const isCompleted = s === 'completed' || s === 'approved';
+              const isCurrent = idx === currentStepIdx;
+              const statusLabel = isCompleted ? 'Completed' : (isCurrent ? 'In Progress' : 'Pending');
+
+              return (
+                <div key={idx} className="relative z-10 flex flex-col items-center flex-1 text-center group">
+                  <motion.div 
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.4, delay: 0.4 + (idx * 0.1) }}
+                    className={`w-12 h-12 lg:w-14 lg:h-14 rounded-full flex items-center justify-center mb-3 md:mb-4 transition-all duration-300 shrink-0 relative
+                    ${isCompleted ? 'bg-emerald-500 text-white shadow-[0_0_0_6px_rgba(255,255,255,1),0_0_0_8px_rgba(16,185,129,0.15)]' : 
+                      isCurrent ? 'bg-blue-600 text-white shadow-[0_0_0_6px_rgba(255,255,255,1),0_0_0_8px_rgba(37,99,235,0.2)]' : 
+                      'bg-white text-slate-300 border-[3px] border-slate-100'}`}
+                  >
+                    {/* Pulse effect for active node */}
+                    {isCurrent && (
+                      <span className="absolute inset-0 rounded-full animate-ping bg-blue-400 opacity-20"></span>
+                    )}
+                    
+                    {stage.icon || getStageIcon(stage.name)}
+                  </motion.div>
+                  
+                  <h4 className={`text-[11px] lg:text-xs font-bold leading-tight px-2 h-8 lg:h-10 flex items-center justify-center w-full max-w-[100px] lg:max-w-[120px] transition-colors duration-300
+                    ${isCompleted || isCurrent ? 'text-slate-900' : 'text-slate-400'}`}>
+                    {stage.name || stage.title}
+                  </h4>
+                  
+                  <div className="mt-2">
+                    <span className={`text-[9px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider transition-colors duration-300
+                      ${isCompleted ? 'bg-emerald-50 text-emerald-600 border border-emerald-100/50' : 
+                        isCurrent ? 'bg-blue-50 text-blue-600 border border-blue-100/50' : 
+                        'text-slate-400'}`}
+                    >
+                      {statusLabel}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+        </motion.div>
+
+        {/* Premium Application Status (Right) */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }} className="flex-[1] bg-white border border-slate-200 rounded-[2rem] p-6 lg:p-8 shadow-sm flex flex-col justify-between overflow-hidden relative">
           
-          {/* Right Sidebar Area (Phases 13 & 14) */}
-          <div className="w-full xl:w-80 shrink-0 space-y-6">
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] shrink-0">
+                <PieChartIcon size={20} />
+              </div>
+              <h3 className="font-bold text-slate-900 text-lg lg:text-xl tracking-tight">Application Status</h3>
+            </div>
+            <button onClick={() => navigate('/app/applications')} className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors shrink-0">
+              View All <ArrowRight size={14} />
+            </button>
+          </div>
+
+          <div className="flex flex-row items-center justify-between flex-1 mt-4">
             
-            {/* Phase 13: Compliance Calendar */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
-              <div className="bg-slate-50 p-3 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-slate-800 font-bold text-sm">
-                  <CalendarIcon size={16} className="text-blue-600" /> Compliance Calendar
-                </div>
-                <button className="text-[10px] text-blue-600 font-bold hover:underline">View All</button>
+            {/* Chart Side */}
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5, delay: 0.6 }} className="relative w-[140px] h-[140px] lg:w-[160px] lg:h-[160px] shrink-0">
+              <div className="absolute inset-0 flex items-center justify-center flex-col z-0">
+                <span className="text-4xl font-black text-slate-900 leading-none tracking-tighter">{totalApps}</span>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">TOTAL</span>
               </div>
-              <div className="p-4 flex flex-col gap-3">
-                <div className="flex gap-3">
-                  <div className="flex flex-col items-center justify-center bg-red-50 text-red-600 rounded-lg w-12 h-12 shrink-0 border border-red-100">
-                    <span className="text-[10px] font-bold uppercase">Sep</span>
-                    <span className="text-lg font-black leading-none">14</span>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800">Fire NOC Renewal</h4>
-                    <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">Pune MIDC Factory Unit</p>
-                    <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
-                      <Clock size={10} /> 3 Days Left
-                    </div>
-                  </div>
-                </div>
-                <div className="w-full h-px bg-slate-100"></div>
-                <div className="flex gap-3">
-                  <div className="flex flex-col items-center justify-center bg-blue-50 text-blue-600 rounded-lg w-12 h-12 shrink-0 border border-blue-100">
-                    <span className="text-[10px] font-bold uppercase">Oct</span>
-                    <span className="text-lg font-black leading-none">01</span>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800">Env. Audit Report</h4>
-                    <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">Nagpur Processing Plant</p>
-                    <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                      <Clock size={10} /> Scheduled
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+              <ResponsiveContainer width="100%" height="100%" className="z-10">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    innerRadius={55}
+                    outerRadius={70}
+                    paddingAngle={4}
+                    dataKey="value"
+                    stroke="none"
+                    cornerRadius={8}
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)', padding: '12px', fontSize: '12px' }}
+                    itemStyle={{ fontWeight: 'bold' }}
+                    cursor={false}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </motion.div>
 
-            {/* Phase 14: Regulatory Watch */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
-              <div className="bg-slate-50 p-3 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-slate-800 font-bold text-sm">
-                  <Flame size={16} className="text-orange-500" /> Regulatory Watch
-                </div>
-              </div>
-              <div className="p-4 space-y-4">
-                <div className="relative pl-4 border-l-2 border-orange-500">
-                  <span className="absolute -left-1.5 top-1 w-2.5 h-2.5 rounded-full bg-orange-500 ring-4 ring-white"></span>
-                  <div className="text-[10px] text-slate-400 font-bold mb-1">Today, 10:00 AM</div>
-                  <h4 className="text-xs font-bold text-slate-800 mb-1">Revised MPCB D+ Zone Checklist</h4>
-                  <p className="text-[11px] text-slate-600 leading-relaxed mb-2">New mandatory water treatment regulations have been published for D+ zones.</p>
-                  <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-md">
-                    <AlertTriangle size={12} /> Matches your profile: 2 Units Affected
+            {/* Legend Side */}
+            <div className="flex flex-col justify-center gap-3 w-full pl-6">
+              {pieData.filter(d => d.name !== 'No Apps').map((item, index) => (
+                <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.3, delay: 0.7 + (index * 0.1) }} key={index} className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: item.color }}></div>
+                    <span className="text-xs font-bold text-slate-600">{item.name}</span>
                   </div>
-                </div>
-                
-                <div className="relative pl-4 border-l-2 border-slate-200">
-                  <span className="absolute -left-1.5 top-1 w-2.5 h-2.5 rounded-full bg-slate-300 ring-4 ring-white"></span>
-                  <div className="text-[10px] text-slate-400 font-bold mb-1">Yesterday</div>
-                  <h4 className="text-xs font-bold text-slate-800 mb-1">Subsidized Solar Policy 2026</h4>
-                  <p className="text-[11px] text-slate-600 leading-relaxed">State government has introduced a 15% capital subsidy for captive solar plants.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Links */}
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-              <h3 className="font-bold text-slate-800 text-sm mb-3">Quick Actions</h3>
-              <div className="space-y-2">
-                <button onClick={() => navigate('/services')} className="w-full flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-100">
-                  <span>Apply for New Service</span>
-                  <ChevronRight size={16} className="text-slate-400" />
-                </button>
-                <button onClick={() => navigate('/drive')} className="w-full flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-100">
-                  <span>Upload Documents</span>
-                  <ChevronRight size={16} className="text-slate-400" />
-                </button>
-                <button onClick={() => navigate('/calc')} className="w-full flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-100">
-                  <span>Incentive Calculator</span>
-                  <ChevronRight size={16} className="text-slate-400" />
-                </button>
-              </div>
+                  <span className="font-black text-slate-900 text-sm ml-2">{item.value}</span>
+                </motion.div>
+              ))}
+              {totalApps === 0 && (
+                <div className="text-center text-xs text-slate-500 font-medium">No apps.</div>
+              )}
             </div>
 
           </div>
+        </motion.div>
+
+      </div>
 
     </div>
   );

@@ -1,18 +1,25 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { SectionHead } from '../../../components/common/SectionHead';
 import { InlineDocumentUpload } from '../components/InlineDocumentUpload';
 import { Btn } from '../../../components/common/Btn';
 import { C, inputCls, inputStyle } from '../../../constants/theme';
-import { Check, ChevronRight, Loader2, Bot, Sparkles } from 'lucide-react';
+import { Check, ChevronRight, Loader2, Bot, Sparkles, ArrowLeft } from 'lucide-react';
+import { useApplications } from '../../../hooks/useApplications';
+import { getMyBusinessProfile } from '../../../api/client';
 
 const STEPS = ["Initiation", "Form Data", "Documents", "Payment"];
 
 export function ApplyService() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { create } = useApplications();
   
+  const serviceName = location.state?.serviceName || 'Factory Licence';
+  const serviceFee = location.state?.fee || 5000;
+
   const [currentStep, setCurrentStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [isValidated, setIsValidated] = useState(false);
@@ -20,9 +27,18 @@ export function ApplyService() {
   const [formData, setFormData] = useState({
     businessName: '',
     unitId: '',
-    appType: 'Factory Licence',
+    appType: serviceName,
     employees: '',
-    power: ''
+    power: '',
+    pan: '',
+    cin: '',
+    gstin: '',
+    doi: '',
+    address: '',
+    district: '',
+    pin: '',
+    sector: '',
+    investment: ''
   });
 
   const [isPrefilled, setIsPrefilled] = useState(false);
@@ -49,42 +65,71 @@ export function ApplyService() {
 
   const handleSubmit = async () => {
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSaving(false);
-    alert("Application Submitted Successfully!");
-    navigate('/dashboard');
+    try {
+      await create({
+        service_name: formData.appType,
+        applicant_name: formData.businessName || currentUser.name,
+        // Let backend handle business_id or leave null for now to prevent FK error
+        status: 'draft' 
+      });
+      alert("Application Submitted Successfully!");
+      navigate('/app/applications');
+    } catch (error) {
+      alert("Failed to submit application");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePrefill = async () => {
     setIsPrefilling(true);
     setPrefillStatusText('Connecting to PRAVAH Vault...');
-    await new Promise(resolve => setTimeout(resolve, 800));
     
-    setPrefillStatusText('Verifying DigiLocker KYC...');
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    setPrefillStatusText('Mapping Data Fields (AI)...');
-    await new Promise(resolve => setTimeout(resolve, 800));
+    try {
+      const profile = await getMyBusinessProfile();
+      
+      setPrefillStatusText('Verifying DigiLocker KYC...');
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      setPrefillStatusText('Mapping Data Fields (AI)...');
+      await new Promise(resolve => setTimeout(resolve, 800));
 
-    setFormData({
-      ...formData,
-      businessName: 'Sahyadri Precision Ltd',
-      unitId: 'U-99283-MH',
-      employees: '145',
-      power: '750'
-    });
-    setIsPrefilling(false);
-    setIsPrefilled(true);
-    setPrefillStatusText('Auto-fill Data');
+      setFormData({
+        ...formData,
+        businessName: profile?.company_name || '',
+        pan: profile?.pan_number || '',
+        cin: profile?.cin_number || '',
+        gstin: profile?.gstin || '',
+        doi: profile?.date_of_incorporation || '',
+        address: profile?.address || '',
+        sector: profile?.industry_sector || ''
+      });
+      setIsPrefilled(true);
+    } catch (err) {
+      console.error("Failed to fetch profile", err);
+      alert("No business profile found in vault. Please create one first.");
+    } finally {
+      setIsPrefilling(false);
+      setPrefillStatusText('Auto-fill Data');
+    }
   };
 
   const inputHighlightedCls = `${inputCls} transition-all duration-500 ${isPrefilled ? 'bg-blue-50/50 border-blue-300 ring-2 ring-blue-100' : ''}`;
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto pb-20 mt-4">
+      <div className="mb-6 flex items-center justify-between">
+        <button 
+          onClick={() => navigate(-1)} 
+          className="flex items-center text-sm font-semibold text-gray-500 hover:text-blue-600 transition-colors bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:shadow-md"
+        >
+          <ArrowLeft size={16} className="mr-2" />
+          Back to Services
+        </button>
+      </div>
       <SectionHead
         eyebrow="New Application"
-        title="Apply for Factory Licence"
+        title={`Apply for ${serviceName}`}
         sub="Complete the multi-step form. Your progress is auto-saved as a draft."
       />
 
@@ -154,37 +199,44 @@ export function ApplyService() {
 
         {currentStep === 1 && (
           <div className="space-y-6 animate-fade-in">
-            <h3 className="text-xl font-bold" style={{ color: C.navyDeep }}>Step 1: Business Details</h3>
+            <h3 className="text-xl font-bold" style={{ color: C.navyDeep }}>Step 1: Entity Details</h3>
             <p className="text-sm text-gray-500 mb-6">Confirm your primary business details to initiate the application draft.</p>
             
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium mb-1 flex justify-between">
-                  Business Name
+                  Business / Company Name
                   {isPrefilled && <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1 rounded">AI Filled</span>}
                 </label>
-                <input 
-                  type="text" 
-                  className={inputHighlightedCls} 
-                  style={inputStyle} 
-                  value={formData.businessName}
-                  onChange={e => setFormData({...formData, businessName: e.target.value})}
-                  placeholder="e.g. Tata Motors"
-                />
+                <input type="text" className={inputHighlightedCls} style={inputStyle} value={formData.businessName} onChange={e => setFormData({...formData, businessName: e.target.value})} placeholder="e.g. Tata Motors" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1 flex justify-between">
-                  Unit ID (Optional)
+                  Date of Incorporation
                   {isPrefilled && <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1 rounded">AI Filled</span>}
                 </label>
-                <input 
-                  type="text" 
-                  className={inputHighlightedCls} 
-                  style={inputStyle} 
-                  value={formData.unitId}
-                  onChange={e => setFormData({...formData, unitId: e.target.value})}
-                  placeholder="e.g. U-12345-MH"
-                />
+                <input type="date" className={inputHighlightedCls} style={inputStyle} value={formData.doi} onChange={e => setFormData({...formData, doi: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 flex justify-between">
+                  PAN Number
+                  {isPrefilled && <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1 rounded">AI Filled</span>}
+                </label>
+                <input type="text" className={inputHighlightedCls} style={inputStyle} value={formData.pan} onChange={e => setFormData({...formData, pan: e.target.value})} placeholder="e.g. ABCDE1234F" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 flex justify-between">
+                  Corporate Identification Number (CIN)
+                  {isPrefilled && <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1 rounded">AI Filled</span>}
+                </label>
+                <input type="text" className={inputHighlightedCls} style={inputStyle} value={formData.cin} onChange={e => setFormData({...formData, cin: e.target.value})} placeholder="e.g. U72900MH2021PTC123456" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1 flex justify-between">
+                  GSTIN
+                  {isPrefilled && <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1 rounded">AI Filled</span>}
+                </label>
+                <input type="text" className={inputHighlightedCls} style={inputStyle} value={formData.gstin} onChange={e => setFormData({...formData, gstin: e.target.value})} placeholder="e.g. 27ABCDE1234F1Z5" />
               </div>
             </div>
           </div>
@@ -192,37 +244,59 @@ export function ApplyService() {
 
         {currentStep === 2 && (
           <div className="space-y-6 animate-fade-in">
-            <h3 className="text-xl font-bold" style={{ color: C.navyDeep }}>Step 2: Service-Specific Data</h3>
-            <p className="text-sm text-gray-500 mb-6">Enter the specifics required by the Factory Directorate.</p>
+            <h3 className="text-xl font-bold" style={{ color: C.navyDeep }}>Step 2: Operational Data & Location</h3>
+            <p className="text-sm text-gray-500 mb-6">Enter the specifics required by the department for this service.</p>
             
             <div className="grid md:grid-cols-2 gap-6">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1 flex justify-between">
+                  Registered Address
+                  {isPrefilled && <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1 rounded">AI Filled</span>}
+                </label>
+                <input type="text" className={inputHighlightedCls} style={inputStyle} value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} placeholder="Full Address" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 flex justify-between">
+                  District
+                  {isPrefilled && <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1 rounded">AI Filled</span>}
+                </label>
+                <input type="text" className={inputHighlightedCls} style={inputStyle} value={formData.district} onChange={e => setFormData({...formData, district: e.target.value})} placeholder="e.g. Mumbai Suburban" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 flex justify-between">
+                  PIN Code
+                  {isPrefilled && <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1 rounded">AI Filled</span>}
+                </label>
+                <input type="text" className={inputHighlightedCls} style={inputStyle} value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value})} placeholder="e.g. 400093" />
+              </div>
+              <div className="border-t border-gray-100 col-span-2 pt-4"></div>
+              <div>
+                <label className="block text-sm font-medium mb-1 flex justify-between">
+                  Industry Sector
+                  {isPrefilled && <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1 rounded">AI Filled</span>}
+                </label>
+                <input type="text" className={inputHighlightedCls} style={inputStyle} value={formData.sector} onChange={e => setFormData({...formData, sector: e.target.value})} placeholder="e.g. Manufacturing" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 flex justify-between">
+                  Projected Investment (₹)
+                  {isPrefilled && <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1 rounded">AI Filled</span>}
+                </label>
+                <input type="number" className={inputHighlightedCls} style={inputStyle} value={formData.investment} onChange={e => setFormData({...formData, investment: e.target.value})} placeholder="e.g. 25000000" />
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-1 flex justify-between">
                   Number of Employees
                   {isPrefilled && <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1 rounded">AI Filled</span>}
                 </label>
-                <input 
-                  type="number" 
-                  className={inputHighlightedCls} 
-                  style={inputStyle} 
-                  value={formData.employees}
-                  onChange={e => setFormData({...formData, employees: e.target.value})}
-                  placeholder="100" 
-                />
+                <input type="number" className={inputHighlightedCls} style={inputStyle} value={formData.employees} onChange={e => setFormData({...formData, employees: e.target.value})} placeholder="e.g. 100" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1 flex justify-between">
-                  Total HP Power
+                  Total HP Power Required
                   {isPrefilled && <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1 rounded">AI Filled</span>}
                 </label>
-                <input 
-                  type="number" 
-                  className={inputHighlightedCls} 
-                  style={inputStyle} 
-                  value={formData.power}
-                  onChange={e => setFormData({...formData, power: e.target.value})}
-                  placeholder="500" 
-                />
+                <input type="number" className={inputHighlightedCls} style={inputStyle} value={formData.power} onChange={e => setFormData({...formData, power: e.target.value})} placeholder="e.g. 500" />
               </div>
             </div>
           </div>
@@ -249,11 +323,11 @@ export function ApplyService() {
             <div className="p-6 bg-gray-50 rounded-lg max-w-sm mx-auto text-left mb-8 border border-gray-200">
               <div className="flex justify-between mb-2">
                 <span className="text-sm text-gray-500">Application Fee</span>
-                <span className="font-semibold">₹5,000</span>
+                <span className="font-semibold">₹{serviceFee.toLocaleString()}</span>
               </div>
               <div className="flex justify-between border-t pt-2 mt-2 border-gray-200">
                 <span className="text-sm font-bold">Total to Pay</span>
-                <span className="font-bold text-lg text-green-700">₹5,000</span>
+                <span className="font-bold text-lg text-green-700">₹{serviceFee.toLocaleString()}</span>
               </div>
             </div>
           </div>

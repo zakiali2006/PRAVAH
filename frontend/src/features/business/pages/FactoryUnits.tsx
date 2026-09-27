@@ -1,68 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Factory, Zap, Droplets, Plus, Building2, Loader2 } from 'lucide-react';
-import { factoryUnitAPI, businessProfileAPI } from '../../../api/services';
+import React, { useState } from 'react';
+import { Factory, Zap, Droplets, Plus, Building2, Loader2, AlertCircle } from 'lucide-react';
 import { AddUnitModal } from '../components/AddUnitModal';
+import { useFactoryUnits } from '../../../hooks/useFactoryUnits';
+import { SectionHead } from '../../../components/common/SectionHead';
+import { Btn } from '../../../components/common/Btn';
+import { C } from '../../../constants/theme';
 
 export const FactoryUnits = () => {
-  const [factoryUnits, setFactoryUnits] = useState([]);
-  const [businessProfileId, setBusinessProfileId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { units, loading, error, addUnit } = useFactoryUnits();
   const [showAddModal, setShowAddModal] = useState(false);
-
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [unitsRes, profileRes] = await Promise.all([
-        factoryUnitAPI.list(),
-        businessProfileAPI.get(),
-      ]);
-      setFactoryUnits(unitsRes.data.data || []);
-      setBusinessProfileId(profileRes.data.data?.id || null);
-    } catch (err) {
-      if (err.response?.status !== 404) {
-        setError('Failed to load factory units.');
-        console.error(err);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleAddUnit = async (unitData) => {
-    if (!businessProfileId) {
-      alert('Please create a business profile first.');
-      return;
-    }
-    const payload = {
-      unit_name: unitData.unitName,
-      category: unitData.category,
-      power_sanctioned_kva: unitData.powerSanctionedKva,
-      water_demand_kl: unitData.waterDemandKl,
-      built_up_area_sqm: unitData.builtUpAreaSqM,
-      operational_status: unitData.operationalStatus,
-      business_profile_id: businessProfileId,
-      midc_plot: {
-        midc_area: unitData.midcArea,
-        plot_number: unitData.plotNumber,
-        survey_number: unitData.surveyNumber,
-        taluka: unitData.taluka,
-        district: unitData.district,
-      },
-    };
-    await factoryUnitAPI.create(payload);
-    await fetchData();
-  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="animate-spin text-blue-600" size={32} />
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="animate-spin text-saffron" size={32} />
       </div>
     );
   }
@@ -70,111 +21,162 @@ export const FactoryUnits = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-2 text-blue-600 font-bold text-xs uppercase tracking-wider mb-1">
-            <Factory size={16} />
-            <span>MIDC Plots & Industrial Units Repository</span>
-          </div>
-          <h2 className="text-2xl font-black text-slate-900">Registered Factory Units & Land Parcels</h2>
-          <p className="text-slate-600 text-xs mt-1">
-            Manage your industrial establishments across MIDC estates in Maharashtra, land lease deeds, sanctioned utility loads, and pollution categorizations.
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <SectionHead
+          eyebrow="MIDC Plots & Industrial Units Repository"
+          title="Registered Factory Units & Land Parcels"
+          sub="Manage your industrial establishments across MIDC estates in Maharashtra, land lease deeds, sanctioned utility loads, and pollution categorizations."
+          icon={Factory}
+        />
 
-        <button
+        <Btn
           onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-6 py-3 rounded-xl transition-all shadow flex items-center space-x-2 self-start md:self-auto"
+          className="self-start sm:self-auto"
         >
-          <Plus size={16} />
-          <span>Register New Factory Unit</span>
-        </button>
+          <Plus size={16} className="mr-2" />
+          Register New Factory Unit
+        </Btn>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-          {error}
-        </div>
-      )}
-
-      {factoryUnits.length === 0 && !error && (
-        <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm text-center">
-          <Factory size={48} className="mx-auto text-slate-300 mb-4" />
-          <h3 className="text-lg font-bold text-slate-600 mb-2">No Factory Units Registered</h3>
-          <p className="text-sm text-slate-400">Click "Register New Factory Unit" to add your first unit.</p>
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-center gap-3">
+          <AlertCircle size={20} />
+          <span className="font-medium text-sm">{error}</span>
         </div>
       )}
 
       {/* Units Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {factoryUnits.map((unit) => {
-          const isRed = unit.category === 'Red';
-          const isOrange = unit.category === 'Orange';
-          const plot = unit.midc_plot || {};
+      {units.length === 0 ? (
+        <div className="bg-white border border-dashed rounded-xl p-12 text-center flex flex-col items-center justify-center shadow-sm" style={{ borderColor: C.line }}>
+          <div className="w-16 h-16 shadow-sm rounded-full flex items-center justify-center mb-4" style={{ background: C.bg, color: C.navyDeep }}>
+            <Factory size={32} />
+          </div>
+          <h3 className="text-lg font-bold mb-2" style={{ color: C.navyDeep }}>No Factory Units Registered</h3>
+          <p className="text-sm text-slate-500 max-w-sm mb-6">
+            You haven't added any industrial units yet. Register your first factory or plot to begin applying for clearances.
+          </p>
+          <Btn onClick={() => setShowAddModal(true)} variant="outline">
+            <Plus size={16} className="mr-2" />
+            Add First Unit
+          </Btn>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {units.map((unit: any) => {
+            const isRed = unit.category === 'Red';
+            const isOrange = unit.category === 'Orange';
+            const isGreen = unit.category === 'Green';
 
-          return (
-            <div key={unit.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all space-y-4">
-              <div className="flex items-start justify-between border-b border-slate-100 pb-3">
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-mono text-xs font-bold text-slate-400">#{unit.id}</span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                      isRed ? 'bg-red-100 text-red-800' : isOrange ? 'bg-orange-100 text-orange-800' : 'bg-emerald-100 text-emerald-800'
-                    }`}>
-                      {unit.category || 'N/A'} Category
+            let categoryColor = 'bg-slate-100 text-slate-700 border-slate-200';
+            let categoryGradient = 'from-slate-500 to-slate-400';
+            if (isRed) {
+              categoryColor = 'bg-red-50 text-red-700 border-red-200';
+              categoryGradient = 'from-red-500 to-rose-400';
+            } else if (isOrange) {
+              categoryColor = 'bg-orange-50 text-orange-700 border-orange-200';
+              categoryGradient = 'from-orange-500 to-amber-400';
+            } else if (isGreen) {
+              categoryColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+              categoryGradient = 'from-emerald-500 to-teal-400';
+            }
+
+            return (
+              <div key={unit.id} className="group relative bg-white rounded-2xl border border-gray-200/80 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+                {/* Top Category Gradient Band */}
+                <div className={`h-2 w-full bg-gradient-to-r ${categoryGradient}`} />
+
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-5 gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="font-mono text-xs font-semibold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
+                          #{unit.id}
+                        </span>
+                        <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${categoryColor}`}>
+                          {unit.category || 'Unknown'} Category
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-800 leading-tight truncate group-hover:text-blue-700 transition-colors" title={unit.unit_name}>
+                        {unit.unit_name}
+                      </h3>
+                    </div>
+                    <span className="shrink-0 bg-blue-50 text-blue-700 font-semibold text-xs px-2.5 py-1.5 rounded-lg border border-blue-100">
+                      {unit.operational_status || 'Unknown'}
                     </span>
                   </div>
-                  <h3 className="text-base font-extrabold text-slate-900 mt-1">{unit.unit_name}</h3>
-                </div>
 
-                <span className="bg-slate-100 text-slate-800 font-bold text-[10px] px-2.5 py-1 rounded-lg">
-                  {unit.operational_status || 'N/A'}
-                </span>
+                  {/* Location Info Box */}
+                  <div className="bg-slate-50/70 rounded-xl p-4 mb-5 border border-slate-100">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mb-1">
+                          <Building2 size={12} />
+                          MIDC Estate
+                        </div>
+                        <p className="text-sm font-bold text-slate-800 truncate" title={unit.midc_area || 'N/A'}>{unit.midc_area || 'N/A'}</p>
+                        <p className="text-[11px] text-slate-500 truncate mt-0.5">{unit.taluka}, {unit.district}</p>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mb-1">
+                          <Factory size={12} />
+                          Cadastral Plot & Survey
+                        </div>
+                        <p className="text-sm font-bold text-slate-800 truncate" title={unit.plot_number || 'N/A'}>{unit.plot_number || 'N/A'}</p>
+                        <p className="text-[11px] text-slate-500 truncate mt-0.5">{unit.survey_number}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Metrics */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm hover:border-amber-200 transition-colors group/metric">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1.5">
+                        <div className="bg-amber-50 p-1 rounded-md text-amber-500 group-hover/metric:bg-amber-100 transition-colors">
+                          <Zap size={14} />
+                        </div>
+                        <span className="font-semibold">Power</span>
+                      </div>
+                      <p className="text-base font-extrabold text-slate-800">
+                        {unit.power_sanctioned_kva || 0} <span className="text-xs font-semibold text-slate-400">kVA</span>
+                      </p>
+                    </div>
+
+                    <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm hover:border-blue-200 transition-colors group/metric">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1.5">
+                        <div className="bg-blue-50 p-1 rounded-md text-blue-500 group-hover/metric:bg-blue-100 transition-colors">
+                          <Droplets size={14} />
+                        </div>
+                        <span className="font-semibold">Water</span>
+                      </div>
+                      <p className="text-base font-extrabold text-slate-800">
+                        {unit.water_demand_kl || 0} <span className="text-xs font-semibold text-slate-400">KLD</span>
+                      </p>
+                    </div>
+
+                    <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm hover:border-indigo-200 transition-colors group/metric">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1.5">
+                        <div className="bg-indigo-50 p-1 rounded-md text-indigo-500 group-hover/metric:bg-indigo-100 transition-colors">
+                          <Building2 size={14} />
+                        </div>
+                        <span className="font-semibold">Area</span>
+                      </div>
+                      <p className="text-base font-extrabold text-slate-800">
+                        {((unit.built_up_area_sqm || 0) / 1000).toFixed(1)}k <span className="text-xs font-semibold text-slate-400">m²</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <span className="text-slate-400 block text-[10px] font-bold">MIDC Estate</span>
-                  <span className="font-bold text-slate-800">{plot.midc_area || '—'}</span>
-                  <span className="text-[11px] text-slate-500 block mt-0.5">{plot.taluka || '—'}, {plot.district || '—'}</span>
-                </div>
-
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <span className="text-slate-400 block text-[10px] font-bold">Cadastral Plot & Survey</span>
-                  <span className="font-bold text-blue-700">{plot.plot_number || '—'}</span>
-                  <span className="text-[11px] text-slate-500 block mt-0.5">{plot.survey_number || '—'}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 text-center text-xs font-bold">
-                <div className="p-2.5 bg-blue-50/60 rounded-xl border border-blue-100">
-                  <Zap size={14} className="mx-auto text-amber-500 mb-1" />
-                  <span className="text-[10px] text-slate-500 block">Sanctioned Power</span>
-                  <span className="text-slate-900">{unit.power_sanctioned_kva || 0} kVA</span>
-                </div>
-
-                <div className="p-2.5 bg-sky-50/60 rounded-xl border border-sky-100">
-                  <Droplets size={14} className="mx-auto text-sky-500 mb-1" />
-                  <span className="text-[10px] text-slate-500 block">Water Quota</span>
-                  <span className="text-slate-900">{unit.water_demand_kl || 0} KLD</span>
-                </div>
-
-                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                  <Building2 size={14} className="mx-auto text-slate-500 mb-1" />
-                  <span className="text-[10px] text-slate-500 block">Built-up Area</span>
-                  <span className="text-slate-900">{(unit.built_up_area_sqm || 0).toLocaleString()} m²</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Add Unit Modal */}
       {showAddModal && (
-        <AddUnitModal 
-          onClose={() => setShowAddModal(false)} 
-          onAdd={handleAddUnit} 
+        <AddUnitModal
+          onClose={() => setShowAddModal(false)}
+          onAdd={addUnit}
         />
       )}
     </div>

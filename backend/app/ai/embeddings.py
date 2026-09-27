@@ -6,8 +6,8 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 # Standard Gemini embedding model (768-dimensional vectors)
-EMBEDDING_MODEL = "gemini-embedding-001"
-EMBEDDING_DIMENSION = 3072
+EMBEDDING_MODEL = "models/gemini-embedding-2"
+EMBEDDING_DIMENSION = 768
 
 
 class EmbeddingError(Exception):
@@ -42,15 +42,19 @@ def generate_embeddings(texts: List[str]) -> List[List[float]]:
 
     try:
         client = genai.Client(api_key=settings.GEMINI_API_KEY)
-        response = client.models.embed_content(
-            model=EMBEDDING_MODEL,
-            contents=cleaned_texts,
-        )
-
         embeddings: List[List[float]] = []
-        if hasattr(response, "embeddings") and response.embeddings:
-            for emb in response.embeddings:
-                values = list(emb.values)
+
+        for text_chunk in cleaned_texts:
+            response = client.models.embed_content(
+                model=EMBEDDING_MODEL,
+                contents=text_chunk,
+                config=genai.types.EmbedContentConfig(
+                    output_dimensionality=EMBEDDING_DIMENSION
+                ),
+            )
+
+            if hasattr(response, "embeddings") and response.embeddings:
+                values = list(response.embeddings[0].values)
                 if len(values) != EMBEDDING_DIMENSION:
                     logger.warning(
                         "Embedding dimension mismatch: expected %d, got %d",
@@ -58,15 +62,14 @@ def generate_embeddings(texts: List[str]) -> List[List[float]]:
                         len(values),
                     )
                 embeddings.append(values)
-            return embeddings
+            elif hasattr(response, "embedding") and response.embedding:
+                embeddings.append(list(response.embedding.values))
+            else:
+                raise EmbeddingError(
+                    "Gemini API returned an empty or unrecognized embedding response."
+                )
 
-        # Fallback inspection for alternative response structure
-        if hasattr(response, "embedding") and response.embedding:
-            return [list(response.embedding.values)]
-
-        raise EmbeddingError(
-            "Gemini API returned an empty or unrecognized embedding response."
-        )
+        return embeddings
 
     except EmbeddingError:
         raise

@@ -69,3 +69,73 @@ export const validateDocumentAPI = async (documentId) => {
   }
   return response.json();
 };
+
+export const getMyBusinessProfile = async () => {
+  const response = await apiClient.get('/business-profile/me');
+  return response.data;
+};
+
+export const createBusinessProfile = async (data) => {
+  const response = await apiClient.post('/business-profile/', data);
+  return response.data;
+};
+
+export const getMyApplications = async () => {
+  const response = await apiClient.get('/applications/me');
+  return response.data;
+};
+
+export const createApplication = async (data) => {
+  const response = await apiClient.post('/applications/', data);
+  return response.data;
+};
+
+export const getOfficerQueue = async () => {
+  const response = await apiClient.get('/officer/queue');
+  return response.data;
+};
+
+export const updateApplicationStatus = async (id, status, remarks) => {
+  const response = await apiClient.post(`/officer/applications/${id}/status`, { status, remarks });
+  return response.data;
+};
+
+export const updateBusinessProfile = async (data) => {
+  const response = await apiClient.put('/business-profile/', data);
+  return response.data;
+};
+
+export const trackApplication = async (id) => {
+  const response = await apiClient.get(`/applications/${id}/track`);
+  return response.data;
+};
+
+export const getApplicationRisk = async (id) => {
+  const response = await apiClient.get(`/applications/${id}/risk`);
+  return response.data;
+};
+
+export const recalculateApplicationRisk = async (id) => {
+  const response = await apiClient.post(`/officer/applications/${id}/recalculate-risk`);
+  return response.data;
+};
+
+export const getFactoryUnits = async () => {
+  const response = await apiClient.get('/business-profile/units');
+  return response.data;
+};
+
+export const createFactoryUnit = async (data) => {
+  const response = await apiClient.post('/business-profile/units', data);
+  return response.data;
+};
+
+export const getMyDocuments = async () => {
+  const response = await apiClient.get('/documents');
+  return response.data;
+};
+
+export const syncDigiLockerAPI = async () => {
+  const response = await apiClient.post('/documents/digilocker/sync');
+  return response.data;
+};

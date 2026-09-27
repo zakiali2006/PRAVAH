@@ -7,9 +7,6 @@ from app.models.application import Application
 from app.models.stage import Stage
 from app.models.document import Document, DocumentType, ApplicationDocument
 from app.models.document_chunk import DocumentChunk
-from app.models.business_profile import BusinessProfile
-from app.models.factory_unit import FactoryUnit, MIDCPlot
+from app.models.business import BusinessProfile, FactoryUnit
 from app.models.service import Service
-from app.models.payment import Payment
-from app.models.wizard import WizardRun, WizardResult
-from app.models.caf import CAFForm, CAFService
+from app.models.risk import ApplicationRiskScore

@@ -9,20 +9,20 @@ from app.models.user import User
 
 DEMO_USERS = [
     {
-        "email": "demo@gmail.com",
-        "password": "demo123",
+        "email": "investor@demo.com",
+        "password": "PravahTest!2026",
         "role": "INVESTOR",
         "is_active": True,
     },
     {
-        "email": "officer@gov.in",
-        "password": "admin123",
+        "email": "officer@demo.com",
+        "password": "PravahTest!2026",
         "role": "OFFICER",
         "is_active": True,
     },
     {
-        "email": "policy@pravah.gov.in",
-        "password": "admin123",
+        "email": "policy@demo.com",
+        "password": "PravahTest!2026",
         "role": "POLICY_ADMIN",
         "is_active": True,
     },

@@ -1,17 +1,18 @@
-from typing import List, Optional
+from pydantic import BaseModel
+from typing import Optional, List
 from datetime import datetime
-from pydantic import BaseModel, Field
+from app.schemas.risk import RiskAssessmentResponse
 
 
-class StageBase(BaseModel):
+class ApplicationStageBase(BaseModel):
     name: str
     desc: Optional[str] = None
-    status: str
-    days: int
-    statutory_limit: int
+    status: str = "pending"
+    days: Optional[int] = 0
+    statutory_limit: Optional[int] = 15
 
 
-class StageOut(StageBase):
+class ApplicationStageResponse(ApplicationStageBase):
     id: int
     application_id: str
 
@@ -20,36 +21,34 @@ class StageOut(StageBase):
 
 
 class ApplicationBase(BaseModel):
+    service_name: str
     applicant_name: str
-    business_profile_id: int
-    factory_unit_id: Optional[int] = None
-    urgency: Optional[str] = "normal"
-    ai_score: Optional[float] = 0.0
-    status: Optional[str] = "draft"
-    is_draft: Optional[bool] = True
+    status: str = "draft"
+    is_draft: bool = True
+    urgency: str = "normal"
+    ai_score: float = 0.0
 
 
-class ApplicationCreate(ApplicationBase):
-    pass
+class ApplicationCreate(BaseModel):
+    service_name: str
+    applicant_name: str
+    business_id: Optional[int] = None
 
 
-class ApplicationOut(ApplicationBase):
+class ApplicationStatusUpdate(BaseModel):
+    status: str
+    remarks: Optional[str] = None
+
+
+class ApplicationResponse(ApplicationBase):
     id: str
     user_id: int
-    service_id: int
+    business_id: Optional[int] = None
+    assigned_officer_id: Optional[int] = None
     submitted_at: Optional[datetime] = None
     created_at: datetime
-    current_stage: Optional[StageOut] = None
+    stages: List[ApplicationStageResponse] = []
+    risk_score: Optional[RiskAssessmentResponse] = None
 
     class Config:
         from_attributes = True
-
-
-class DocumentUpload(BaseModel):
-    document_type_id: int
-    document_id: int
-
-
-class ApplicationTransition(BaseModel):
-    new_status: str
-    desc: Optional[str] = None

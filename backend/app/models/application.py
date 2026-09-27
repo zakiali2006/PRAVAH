@@ -9,18 +9,11 @@ class Application(Base):
 
     id = Column(String, primary_key=True, index=True)  # e.g. MTR/2026/001
     user_id = Column(Integer, ForeignKey("users.id"))
-    business_profile_id = Column(
-        Integer, ForeignKey("business_profiles.id"), nullable=False, index=True
-    )
-    factory_unit_id = Column(
-        Integer, ForeignKey("factory_units.id"), nullable=True, index=True
-    )
-    service_id = Column(Integer, ForeignKey("services.id"), nullable=False, index=True)
-
+    business_id = Column(Integer, ForeignKey("business_profiles.id"), nullable=True)
+    assigned_officer_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    service_name = Column(String, nullable=False)
     applicant_name = Column(String, nullable=False)
-    status = Column(
-        String, default="draft"
-    )  # draft, pending, in_progress, approved, rejected
+    status = Column(String, default="draft")  # draft, pending, approved, rejected
     is_draft = Column(Boolean, default=True)
 
     # Priority for AI workload balancer
@@ -30,15 +23,15 @@ class Application(Base):
     submitted_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    current_stage_id = Column(Integer, ForeignKey("tracking_stages.id"), nullable=True)
-
     stages = relationship(
         "Stage",
         back_populates="application",
         cascade="all, delete",
-        foreign_keys="[Stage.application_id]",
+        order_by="Stage.id",
     )
-    current_stage = relationship("Stage", foreign_keys=[current_stage_id])
-    business_profile = relationship("BusinessProfile")
-    factory_unit = relationship("FactoryUnit")
-    service = relationship("Service")
+    risk_score = relationship(
+        "ApplicationRiskScore",
+        back_populates="application",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
