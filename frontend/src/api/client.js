@@ -90,6 +90,10 @@ export const createApplication = async (data) => {
   return response.data;
 };
 
+export const deleteApplicationAPI = async (id) => {
+  const response = await apiClient.delete(`/applications/${id}`);
+  return response.data;
+};
 
 export const getOfficerQueue = async () => {
   const response = await apiClient.get('/officer/queue');
@@ -138,5 +142,31 @@ export const getMyDocuments = async () => {
 
 export const syncDigiLockerAPI = async () => {
   const response = await apiClient.post('/documents/digilocker/sync');
+  return response.data;
+};
+
+export const saveToVaultAPI = async (documentId) => {
+  const token = localStorage.getItem('token');
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const response = await fetch(`http://localhost:8000/api/documents/${documentId}/save_to_vault`, {
+    method: 'POST',
+    headers,
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Saving to vault failed');
+  }
+  return response.json();
+};
+
+export const deleteDocumentAPI = async (documentId) => {
+  const response = await apiClient.delete(`/documents/${documentId}`);
   return response.data;
 };

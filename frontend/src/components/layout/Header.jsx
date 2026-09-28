@@ -26,6 +26,7 @@ export function Header({ a11y, setA11y }) {
     { label: t.nav.about, path: "about" },
     { label: t.nav.services, path: "services" },
     { label: t.nav.contact, path: "contact" },
+    { label: "Future Implementation", path: "future-scope" },
   ];
 
   const privateLinks = currentUser && NAVIGATION[currentUser.role] ? NAVIGATION[currentUser.role] : [];

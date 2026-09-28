@@ -58,8 +58,33 @@ export function UploadDocumentModal({ onClose, onUpload }) {
     }
   };
 
+  const handleCancel = async () => {
+    if (documentId) {
+      try {
+        const { deleteDocumentAPI } = await import('../../../api/client');
+        await deleteDocumentAPI(documentId);
+      } catch (err) {
+        console.error('Failed to cleanup document on cancel', err);
+      }
+    }
+    onClose();
+  };
+
   const handleFinalSave = async () => {
     setStep('saving');
+    
+    try {
+      if (documentId) {
+        const { saveToVaultAPI } = await import('../../../api/client');
+        await saveToVaultAPI(documentId);
+      }
+    } catch (err) {
+      console.error(err);
+      setUploadError(err.message || 'Failed to save to vault');
+      setStep('result');
+      return;
+    }
+
     // For the UI, we use the returned status if available, else 'verified' if VALID
     let finalStatus = 'pending';
     if (validationData) {
@@ -95,7 +120,7 @@ export function UploadDocumentModal({ onClose, onUpload }) {
         {/* Header */}
         <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
           <h3 className="font-extrabold text-lg text-slate-900">Upload & Verify Document</h3>
-          <button onClick={onClose} disabled={step === 'analyzing' || step === 'saving'} className="text-slate-400 hover:text-slate-600 disabled:opacity-50">
+          <button onClick={handleCancel} disabled={step === 'analyzing' || step === 'saving'} className="text-slate-400 hover:text-slate-600 disabled:opacity-50">
             <X size={20} />
           </button>
         </div>
@@ -161,7 +186,7 @@ export function UploadDocumentModal({ onClose, onUpload }) {
               <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={handleCancel}
                   className="px-4 py-2 font-bold text-slate-600 hover:bg-slate-50 rounded-lg"
                 >
                   Cancel
@@ -324,7 +349,7 @@ export function UploadDocumentModal({ onClose, onUpload }) {
               <div className="flex justify-end gap-3 pt-4 mt-2 border-t border-slate-100 sticky bottom-0 bg-white/90 backdrop-blur pb-2">
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={handleCancel}
                   disabled={step === 'saving'}
                   className="px-5 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
                 >
