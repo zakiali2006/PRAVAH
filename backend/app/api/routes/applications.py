@@ -95,3 +95,31 @@ def get_clearance_roadmap(
             },
         ]
     }
+
+
+@router.delete("/{application_id:path}")
+def delete_application(
+    application_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    app = application_repo.get(db, id=application_id)
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+        
+    if app.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this application")
+
+    # Manually delete related data to avoid foreign key errors
+    from app.models.document import ApplicationDocument
+    db.query(ApplicationDocument).filter(ApplicationDocument.application_id == application_id).delete()
+
+    from app.models.stage import Stage
+    db.query(Stage).filter(Stage.application_id == application_id).delete()
+    
+    from app.models.risk import ApplicationRiskScore
+    db.query(ApplicationRiskScore).filter(ApplicationRiskScore.application_id == application_id).delete()
+    
+    # Delete the application
+    application_repo.remove(db, id=application_id)
+    return {"message": "Application deleted successfully"}

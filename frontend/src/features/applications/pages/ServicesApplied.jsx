@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Loader2, Check, Clock, AlertTriangle, ChevronRight, FileText, Calendar, ArrowLeft } from "lucide-react";
+import { Loader2, Check, Clock, AlertTriangle, ChevronRight, FileText, Calendar, ArrowLeft, Trash2 } from "lucide-react";
 import { SectionHead } from "../../../components/common/SectionHead";
 import { Btn } from "../../../components/common/Btn";
 import { C } from "../../../constants/theme";
@@ -9,7 +9,7 @@ import { useApplications } from "../../../hooks/useApplications";
 export function ServicesApplied() {
   const [view, setView] = useState('list'); // 'list' or 'track'
   const [selectedApp, setSelectedApp] = useState(null);
-  const { applications, loading: appsLoading } = useApplications();
+  const { applications, loading: appsLoading, refresh } = useApplications();
 
   const handleTrack = (app) => {
     setSelectedApp(app);
@@ -19,6 +19,18 @@ export function ServicesApplied() {
   const handleBack = () => {
     setView('list');
     setSelectedApp(null);
+  };
+
+  const handleDeleteApp = async (appId) => {
+    if (!window.confirm("Are you sure you want to delete this application? All tracking and submitted data will be removed forever.")) return;
+    try {
+      const { deleteApplicationAPI } = await import('../../../api/client');
+      await deleteApplicationAPI(appId);
+      refresh();
+    } catch (err) {
+      console.error("Failed to delete application", err);
+      alert("Could not delete application.");
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -95,12 +107,21 @@ export function ServicesApplied() {
                           {app.submitted_at ? new Date(app.submitted_at).toLocaleDateString() : 'Not Submitted'}
                         </td>
                         <td className="p-4 text-right">
-                          <button
-                            onClick={() => handleTrack(app)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-md font-bold text-xs transition-colors"
-                          >
-                            Track <ChevronRight size={14} />
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleTrack(app)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-md font-bold text-xs transition-colors"
+                            >
+                              Track <ChevronRight size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteApp(app.id)}
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                              title="Delete Application"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Play, Check, Bell, FileText, ChevronRight, Landmark, FileCheck, Calculator, MessageSquare, Bot, Headphones } from "lucide-react";
+import { Search, Play, Check, Bell, FileText, ChevronRight, Landmark, FileCheck, Calculator, MessageSquare, Bot, Headphones, Clock, Smartphone, Download } from "lucide-react";
 import { SectionHead } from "../../../components/common/SectionHead";
 import { Btn } from "../../../components/common/Btn";
 import { C, inputCls, inputStyle } from "../../../constants/theme";
@@ -8,6 +8,7 @@ import { T } from "../../../constants/translations";
 import { useCountUp } from "../../../hooks/useCountUp";
 import { useTranslation } from "../../../contexts/TranslationContext";
 import { useAuth } from "../../../contexts/AuthContext";
+
 const FEATURES = [
   { icon: FileCheck, title: "Single-window approvals", body: "One application, one set of documents. The portal routes your file to every department that has to sign off on it." },
   { icon: Clock, title: "Desk-level tracking", body: "See which officer is holding your file, for how long, and what the statutory timeline says it should take." },
@@ -16,8 +17,6 @@ const FEATURES = [
   { icon: Bot, title: "AI assistant", body: "Ask about eligibility, documents or timelines at any hour and get an answer in plain language." },
   { icon: Headphones, title: "Investor handholding", body: "A relationship manager from first enquiry through land, power, water and commissioning." },
 ];
-
-import { Clock, Smartphone, Download } from "lucide-react"; // moved up
 
 function Hero() {
   const { t } = useTranslation();

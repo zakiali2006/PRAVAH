@@ -146,7 +146,7 @@ export function InlineDocumentUpload({ onValidationComplete }) {
                     }}
                   />
                   <label htmlFor="manualOverride" className="text-sm text-orange-900 cursor-pointer">
-                    <strong>Submit for Manual Review:</strong> My document is correct, but the AI failed to read it properly. I request a manual check.
+                    <strong>Submit for Manual Review:</strong> The system detected a potential mismatch. If you are confident the document is correct, you can proceed and request a manual check.
                   </label>
                 </div>
               )}
