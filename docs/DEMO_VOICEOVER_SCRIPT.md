@@ -4,12 +4,16 @@ This script perfectly maps to the `DEMO_SCREEN_RECORDING_RUNBOOK.md` recorded by
 
 ---
 
-## 🎙️ Scene 1: Introduction & Trilingual Support
+## 🎙️ Scene 1: Introduction, Chatbot & Trilingual Support
 **(Start speaking as the video begins on the landing page)**
 
 "Welcome to PRAVAH — a unified, intelligent portal designed to streamline government approvals and compliance for businesses in Maharashtra. 
 
-One of our core goals is accessibility. As you can see on the landing page, we have built-in **Trilingual Support**. Users can seamlessly switch the entire platform's interface between English, Hindi, and Marathi with zero latency. This ensures that entrepreneurs from all regions of Maharashtra can interact with the system comfortably."
+Right from the start, we offer an integrated **AI Chatbot** available for all users, even before logging in. If an entrepreneur wants to know about the platform's key features, they simply click a pre-set question. The AI instantly provides a clear, formatted summary of our highlights, like the Central Vault and Smart Triage.
+
+*(Pause briefly while the UI switches languages)*
+
+Another core goal is accessibility. We have built-in **Trilingual Support**. Users can seamlessly switch the entire platform's interface between English, Hindi, and Marathi with zero latency. This ensures that entrepreneurs from all regions of Maharashtra can interact with the system comfortably."
 
 ---
 

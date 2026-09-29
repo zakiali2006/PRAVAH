@@ -1,0 +1,1 @@
+from app.core.database import SessionLocal; from app.models.stage import Stage; from app.models.application import Application; db = SessionLocal(); db.query(Stage).delete(); db.query(Application).delete(); db.commit()

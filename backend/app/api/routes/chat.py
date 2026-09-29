@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.api.deps import get_current_user
+from app.api.deps import get_optional_user
 from app.models.user import User
 from app.models.schemas import ChatRequest
 from app.ai.rag_service import rag_service
@@ -19,7 +19,7 @@ router = APIRouter()
 def chat_assistant(
     request: ChatRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User | None = Depends(get_optional_user),
 ):
     """
     Kajal's Module: Authenticated RAG Query Assistant.
@@ -39,9 +39,10 @@ def chat_assistant(
         )
 
     try:
+        user_id = current_user.id if current_user else None
         rag_result = rag_service.answer_query(
             db=db,
-            user_id=current_user.id,
+            user_id=user_id,
             question=clean_message,
             application_id=request.application_id,
         )

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { SectionHead } from '../../../components/common/SectionHead';
 import { C } from '../../../constants/theme';
-import { FolderOpen, Upload, FileText, CheckCircle2, Shield, Cloud, Lock, Server, Link as LinkIcon, Loader2, AlertTriangle, X } from 'lucide-react';
+import { FolderOpen, Upload, FileText, CheckCircle2, Shield, Cloud, Lock, Server, Link as LinkIcon, Loader2, AlertTriangle, X, Trash2 } from 'lucide-react';
 import { Btn } from '../../../components/common/Btn';
 import { useMockApp } from '../../../contexts/MockAppContext';
 import { UploadDocumentModal } from '../components/UploadDocumentModal';
@@ -41,6 +41,7 @@ export function DocumentDrive() {
 
         return {
           id: `DOC-${doc.id}`,
+          rawId: doc.id,
           name: doc.original_name || doc.filename,
           type: doc.mime_type,
           uploadDate: new Date(doc.created_at || Date.now()).toISOString().split('T')[0],
@@ -50,7 +51,8 @@ export function DocumentDrive() {
           matches: verification.matches || [],
           mismatches: verification.mismatches || [],
           reasons: verification.reasons || [],
-          extracted_data: doc.extracted_data?.fields || {}
+          extracted_data: doc.extracted_data?.fields || {},
+          isDigiLocker: (doc.file_path || '').includes('/mock/')
         };
       });
       setDocuments(formattedDocs);
@@ -58,6 +60,18 @@ export function DocumentDrive() {
       console.error("Failed to fetch documents", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteDocument = async (rawId) => {
+    if (!window.confirm("Are you sure you want to delete this document? This will remove all AI insights related to it.")) return;
+    try {
+      const { deleteDocumentAPI } = await import('../../../api/client');
+      await deleteDocumentAPI(rawId);
+      setDocuments(docs => docs.filter(d => d.rawId !== rawId));
+    } catch (err) {
+      console.error("Failed to delete document", err);
+      alert("Could not delete document.");
     }
   };
 
@@ -214,10 +228,10 @@ export function DocumentDrive() {
                         <span className="font-mono text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{doc.id}</span>
                         <span>{doc.uploadDate}</span>
                         <span className="text-slate-300">•</span>
-                        {doc.status === 'verified' || (doc.name || doc.type || '').includes('Aadhaar') || (doc.name || doc.type || '').includes('PAN') ? (
+                        {doc.status === 'verified' || doc.isDigiLocker ? (
                           <span className="text-emerald-600 flex items-center font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
                             <CheckCircle2 size={12} className="mr-1" /> 
-                            {(doc.name || doc.type || '').includes('Aadhaar') || (doc.name || doc.type || '').includes('PAN') ? 'DigiLocker Verified' : 'AI Verified'}
+                            {doc.isDigiLocker ? 'DigiLocker Verified' : 'AI Verified'}
                           </span>
                         ) : doc.status === 'ai_flagged' ? (
                           <span className="text-rose-600 flex items-center font-semibold bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
@@ -237,13 +251,22 @@ export function DocumentDrive() {
                   </div>
                   <div className="flex items-center gap-4 mt-4 sm:mt-0 pl-16 sm:pl-0">
                     <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-100">{doc.size || '1.2 MB'}</span>
-                    <Btn 
-                      variant="outline" 
-                      className="text-xs py-1.5 px-4"
-                      onClick={() => setSelectedDocForView(doc)}
-                    >
-                      {t.vault.view}
-                    </Btn>
+                    <div className="flex items-center gap-2">
+                      <Btn 
+                        variant="outline" 
+                        className="text-xs py-1.5 px-4"
+                        onClick={() => setSelectedDocForView(doc)}
+                      >
+                        {t.vault.view}
+                      </Btn>
+                      <button 
+                        onClick={() => handleDeleteDocument(doc.rawId)}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="Delete Document"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

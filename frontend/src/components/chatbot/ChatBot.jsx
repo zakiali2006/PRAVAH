@@ -51,28 +51,70 @@ export function ChatBot() {
     const text = (customText || input).trim();
     if (!text || busy) return;
 
-    // Check if token exists
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setMsgs((prev) => [
-        ...prev,
-        { role: "user", text },
-        {
-          role: "assistant",
-          text: "You are currently not logged in. Please sign in to your PRAVAH account to query your private uploaded documents and applications.",
-          sources: [],
-          suggestions: [],
-          isError: true,
-        },
-      ]);
-      setInput("");
-      return;
-    }
-
     const next = [...msgs, { role: "user", text, sources: [], suggestions: [] }];
     setMsgs(next);
     setInput("");
     setBusy(true);
+
+    const isUnauth = !localStorage.getItem("token");
+    if (isUnauth) {
+      if (text === "What is PRAVAH?" || text === "What are the key features for the SIH hackathon?") {
+        setTimeout(() => {
+          setMsgs(prev => [
+            ...prev,
+            {
+              role: "assistant",
+              text: (
+                <div className="space-y-2 leading-relaxed">
+                  <p><strong className="text-blue-400">PRAVAH</strong> is an AI-powered single-window clearance system for the Government of Maharashtra.</p>
+                  <p className="font-semibold text-amber-300 mt-2 border-b border-slate-700/50 pb-1">Key Highlighted Features:</p>
+                  <ul className="list-disc pl-4 space-y-1.5 text-slate-200">
+                    <li><strong className="text-white">Native Trilingual Support:</strong> English, Marathi, and Hindi with real-time switching.</li>
+                    <li><strong className="text-white">AI-Powered Pre-fill:</strong> Extracts data from the Central Vault.</li>
+                    <li><strong className="text-white">DigiLocker Integration:</strong> Verifies identity documents automatically.</li>
+                    <li><strong className="text-white">Smart Triage & Risk Scoring:</strong> AI Officer Copilot evaluates trust scores.</li>
+                    <li><strong className="text-white">Real-Time Fraud Detection:</strong> Flags duplicate apps & PAN overlaps.</li>
+                    <li><strong className="text-white">Dynamic CAF Builder:</strong> Drag-and-drop tool for policy admins.</li>
+                    <li><strong className="text-white">Automated Tracking Roadmap:</strong> Animated live tracking for investors.</li>
+                  </ul>
+                </div>
+              ),
+              sources: [],
+              suggestions: []
+            }
+          ]);
+          setBusy(false);
+        }, 1500); // Simulate backend delay
+        return;
+      }
+      
+      if (text === "Does this platform support multiple languages?") {
+        setTimeout(() => {
+          setMsgs(prev => [
+            ...prev,
+            {
+              role: "assistant",
+              text: (
+                <div className="space-y-2 leading-relaxed">
+                  <p>Yes! <strong className="text-blue-400">PRAVAH</strong> provides <strong className="text-white">Native Trilingual Support</strong>.</p>
+                  <p>The platform seamlessly supports:</p>
+                  <ul className="list-disc pl-4 space-y-1 text-slate-200">
+                    <li>English</li>
+                    <li>Marathi (मराठी)</li>
+                    <li>Hindi (हिंदी)</li>
+                  </ul>
+                  <p className="text-amber-300 italic text-[10px] mt-2">You can use the Language Switcher in the top navigation bar to toggle translations instantly without reloading the page!</p>
+                </div>
+              ),
+              sources: [],
+              suggestions: []
+            }
+          ]);
+          setBusy(false);
+        }, 1200);
+        return;
+      }
+    }
 
     try {
       const payload = {
@@ -279,6 +321,31 @@ export function ChatBot() {
               )}
               <div ref={endRef} />
             </div>
+
+            {/* Quick Prompts for unauthenticated users */}
+            {!localStorage.getItem("token") && (
+              <div className="px-3 py-1.5 bg-slate-950/80 border-t border-slate-800 flex flex-wrap items-center gap-1.5 text-[10px]">
+                <span className="text-slate-400 font-medium mr-1">Suggested:</span>
+                <button
+                  onClick={() => send("What is PRAVAH?")}
+                  className="shrink-0 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 transition-colors"
+                >
+                  What is PRAVAH?
+                </button>
+                <button
+                  onClick={() => send("What are the key features for the SIH hackathon?")}
+                  className="shrink-0 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 transition-colors"
+                >
+                  Key Hackathon Features
+                </button>
+                <button
+                  onClick={() => send("Does this platform support multiple languages?")}
+                  className="shrink-0 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 transition-colors"
+                >
+                  Language Support
+                </button>
+              </div>
+            )}
 
             {/* Quick Copilot Prompts (if application is selected) */}
             {selectedAppId && (

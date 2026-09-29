@@ -27,6 +27,7 @@ import { AuthenticatedLayout } from "../components/layout/AuthenticatedLayout";
 import { Home } from "../features/home/pages/Home";
 import { About } from "../pages/About";
 import { Contact } from "../pages/Contact";
+import { FutureScope } from "../pages/FutureScope";
 import { Login } from "../pages/Login";
 import { Register } from "../pages/Register";
 import { Unauthorized } from "../pages/Unauthorized";
@@ -109,6 +110,7 @@ function AppRoutes() {
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<ServicesAvailable />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/future-scope" element={<FutureScope />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/unauthorized" element={<Unauthorized />} />

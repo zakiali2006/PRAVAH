@@ -139,7 +139,10 @@ def list_documents(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    docs = db.query(Document).filter(Document.uploader_id == current_user.id).all()
+    docs = db.query(Document).filter(
+        Document.uploader_id == current_user.id,
+        Document.status != "DELETED"
+    ).all()
     data = [DocumentOut.model_validate(d).model_dump() for d in docs]
     return success_response(data, "Documents retrieved")
 
@@ -177,7 +180,13 @@ def delete_document(
             ErrorCode.FORBIDDEN, "Not authorized to delete this document", 403
         )
 
-    db.delete(doc)
+    # 1. Delete associated RAG chunks to remove AI context
+    from app.models.document_chunk import DocumentChunk
+    db.query(DocumentChunk).filter(DocumentChunk.document_id == document_id).delete()
+    
+    # 2. Soft-delete the document so applications can still reference it
+    doc.status = "DELETED"
+    
     db.commit()
     return success_response(None, "Document deleted successfully")
 
@@ -269,15 +278,16 @@ def validate_document(
             else:
                 raise
 
-        # Phase 5: Structured Data Extraction
-        structured_data = extract_structured_data(raw_text, doc_type_name)
-
-        # Phase 6: Automated Verification against real authenticated BusinessProfile
+        # Phase 5: Fetch BusinessProfile first for extraction fallback
         business_profile = (
             db.query(BusinessProfile)
             .filter(BusinessProfile.user_id == current_user.id)
             .first()
         )
+
+        structured_data = extract_structured_data(raw_text, doc_type_name, business_profile)
+
+        # Phase 6: Automated Verification against real authenticated BusinessProfile
 
         validation_result = validate_document_data(
             extracted_data=structured_data,
@@ -285,8 +295,7 @@ def validate_document(
             raw_text=raw_text,
         )
 
-        # Phase 7: Vectorization (Run in background to avoid blocking API response)
-        background_tasks.add_task(process_document_embeddings, db, doc.id, raw_text)
+        # Phase 7: Vectorization is deferred to /save_to_vault endpoint
 
         # Persist status and detailed verification telemetry to document record
         doc.status = validation_result.status.value
@@ -295,6 +304,7 @@ def validate_document(
         doc.extracted_data = {
             "fields": structured_data.model_dump(),
             "verification": validation_result.model_dump(),
+            "raw_extracted_text": raw_text,
         }
         db.commit()
         db.refresh(doc)
@@ -373,3 +383,33 @@ def get_validation_result(
         "extracted_data": fields_meta,
     }
     return success_response(data, "Validation status retrieved")
+
+@router.post("/{document_id}/save_to_vault", response_model=dict)
+def save_document_to_vault(
+    document_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        return error_response(ErrorCode.RESOURCE_NOT_FOUND, "Document not found", 404)
+
+    if doc.uploader_id != current_user.id:
+        return error_response(
+            ErrorCode.FORBIDDEN, "Not authorized to access this document", 403
+        )
+
+    # 1. Update status to Vaulted (if we want, or leave as is)
+    # We will just mark it securely stored and trigger vectorisation
+    
+    # 2. Trigger Vectorization
+    raw_text = None
+    if isinstance(doc.extracted_data, dict):
+        raw_text = doc.extracted_data.get("raw_extracted_text")
+
+    if raw_text:
+        from app.engines.vectorize_engine import process_document_embeddings
+        background_tasks.add_task(process_document_embeddings, db, doc.id, raw_text)
+
+    return success_response({"document_id": doc.id}, "Document saved to vault and vectorized successfully")
