@@ -45,6 +45,7 @@ import { DigiLockerMockAuth } from "../features/documents/pages/DigiLockerMockAu
 import { OfficerDashboard } from "../features/officer/pages/OfficerDashboard";
 import { DocumentReview } from "../features/officer/pages/DocumentReview";
 import { DuplicateAlerts } from "../features/officer/pages/DuplicateAlerts";
+import { OfficerGrievances } from "../features/officer/pages/OfficerGrievances";
 import { OfficerQueue } from "../features/officer/pages/OfficerQueue";
 import { FactoryUnits } from "../features/business/pages/FactoryUnits";
 import { InvestorWizard } from "../features/applications/pages/InvestorWizard";
@@ -154,7 +155,7 @@ function AppRoutes() {
               <Route path="fraud" element={<FraudRadar alerts={INITIAL_FRAUD_ALERTS} />} />
               <Route path="queue" element={<OfficerQueue />} />
               <Route path="duplicates" element={<DuplicateAlerts />} />
-              <Route path="grievances" element={<UnderConstruction title="Grievances" />} />
+              <Route path="grievances" element={<OfficerGrievances />} />
             </Route>
 
             {/* Policy Admin Routes */}
