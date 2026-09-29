@@ -54,12 +54,26 @@ def extract_structured_data(
         print(f"AI Extraction Failed, using fallback. Error: {e}")
         return DocumentExtractionResult(
             document_type=document_type,
-            business_name=business_profile.company_name if business_profile else "TechNova Manufacturing Pvt Ltd",
-            document_number=business_profile.pan_number if business_profile else "ABCDE1234F",
-            pan_number=business_profile.pan_number if business_profile else "ABCDE1234F",
-            cin_number=business_profile.cin_number if business_profile else "U29253MH2024PTC123456",
+            business_name=(
+                business_profile.company_name
+                if business_profile
+                else "TechNova Manufacturing Pvt Ltd"
+            ),
+            document_number=(
+                business_profile.pan_number if business_profile else "ABCDE1234F"
+            ),
+            pan_number=(
+                business_profile.pan_number if business_profile else "ABCDE1234F"
+            ),
+            cin_number=(
+                business_profile.cin_number
+                if business_profile
+                else "U29253MH2024PTC123456"
+            ),
             issue_date="2024-01-01",
-            address=business_profile.address if business_profile else "Mumbai, Maharashtra",
+            address=(
+                business_profile.address if business_profile else "Mumbai, Maharashtra"
+            ),
             signatures_present=True,
-            raw_extracted_text=raw_text[:200] if raw_text else "Mock text"
+            raw_extracted_text=raw_text[:200] if raw_text else "Mock text",
         )

@@ -35,9 +35,8 @@ def get_current_user(
 from fastapi.security.utils import get_authorization_scheme_param
 from fastapi import Request
 
-def get_optional_user(
-    request: Request, db: Session = Depends(get_db)
-) -> User | None:
+
+def get_optional_user(request: Request, db: Session = Depends(get_db)) -> User | None:
     authorization = request.headers.get("Authorization")
     scheme, token = get_authorization_scheme_param(authorization)
     if not authorization or scheme.lower() != "bearer":
