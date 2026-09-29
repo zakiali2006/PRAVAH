@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, Outlet } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+
+
+import { UnderConstruction } from "../components/common/UnderConstruction";
+
 import {
-  INITIAL_FACTORY_UNITS,
-  INITIAL_COMPLIANCES,
-  INITIAL_PAYMENTS,
-  INITIAL_QUERIES,
-  INITIAL_PUBLIC_CONSULTATIONS,
-  INITIAL_SCHEMES,
-  INITIAL_APPLICATIONS,
-  INITIAL_DOCUMENTS,
-  INITIAL_AUDIT_LOGS,
   INITIAL_FRAUD_ALERTS,
-  INITIAL_USERS
 } from "../data/mockData";
 import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
@@ -21,24 +16,35 @@ import { AuthProvider } from "../contexts/AuthContext";
 import { TranslationProvider } from "../contexts/TranslationContext";
 import { MockAppProvider } from "../contexts/MockAppContext";
 
+// Auth & Guards
+import { RoleGuard } from "../auth/RoleGuard";
+import { ROLES } from "../config/roles";
+
+// Layouts
+import { AuthenticatedLayout } from "../components/layout/AuthenticatedLayout";
+
+// Public Pages
 import { Home } from "../features/home/pages/Home";
 import { About } from "../pages/About";
+import { Contact } from "../pages/Contact";
+import { Login } from "../pages/Login";
+import { Register } from "../pages/Register";
+import { Unauthorized } from "../pages/Unauthorized";
+
+// Feature Pages
 import { ServicesAvailable } from "../features/services/pages/ServicesAvailable";
 import { ServicesApplied } from "../features/applications/pages/ServicesApplied";
 import { ApplyService } from "../features/applications/pages/ApplyService";
 import { IncentiveCalculator } from "../features/incentives/pages/IncentiveCalculator";
 import { Grievances } from "../features/grievances/pages/Grievances";
 import { InvestorDashboard } from "../features/dashboard/pages/InvestorDashboard";
-import { AuthenticatedLayout } from "../components/layout/AuthenticatedLayout";
-import { useAuth } from "../contexts/AuthContext";
-import { Outlet, Navigate } from "react-router-dom";
-import { Contact } from "../pages/Contact";
-import { Login } from "../pages/Login";
-import { Register } from "../pages/Register";
 import { MyBusiness } from "../features/business/pages/MyBusiness";
 import { DocumentDrive } from "../features/documents/pages/DocumentDrive";
-import { OfficerLayout } from "../features/officer/layout/OfficerLayout";
+import { DigiLockerMockAuth } from "../features/documents/pages/DigiLockerMockAuth";
 import { OfficerDashboard } from "../features/officer/pages/OfficerDashboard";
+import { DocumentReview } from "../features/officer/pages/DocumentReview";
+import { DuplicateAlerts } from "../features/officer/pages/DuplicateAlerts";
+import { OfficerQueue } from "../features/officer/pages/OfficerQueue";
 import { FactoryUnits } from "../features/business/pages/FactoryUnits";
 import { InvestorWizard } from "../features/applications/pages/InvestorWizard";
 import { PaymentsHistory } from "../features/dashboard/pages/PaymentsHistory";
@@ -47,16 +53,19 @@ import { PublicConsultations } from "../features/home/pages/PublicConsultations"
 import { AuditLogs } from "../features/dashboard/pages/AuditLogs";
 import { FraudRadar } from "../features/officer/pages/FraudRadar";
 import { Feedback } from "../features/dashboard/pages/Feedback";
-// A wrapper to enforce authentication inline
-function PrivateRoute() {
-  const { currentUser, loading } = useAuth();
-  if (loading) return null;
-  return currentUser ? <Outlet /> : <Login />;
-}
+import { RiskAlerts } from "../features/dashboard/pages/RiskAlerts";
 
-// A layout for public pages
-import { useLocation } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+// Policy Admin Pages
+import { PolicyDashboard } from "../features/policy/pages/PolicyDashboard";
+import { ManageServices } from "../features/policy/pages/ManageServices";
+import { ConfigureWorkflows } from "../features/policy/pages/ConfigureWorkflows";
+import { 
+  BottleneckAnalytics, 
+  DistrictAnalysis, 
+  SectorAnalysis, 
+  DepartmentAnalysis, 
+  RegulatoryImpact 
+} from "../features/policy/pages/AnalyticsStubs";
 
 function PublicLayout({ a11y, setA11y }) {
   const location = useLocation();
@@ -85,7 +94,7 @@ function AppRoutes() {
     document.documentElement.style.fontSize = fs;
   }, [a11y.font]);
 
-  const a11yClass = `${a11y.invert ? "invert hue-rotate-180" : ""} ${a11y.links ? "underline-links" : ""}`;
+  const a11yClass = `${a11y.invert ? "a11y-high-contrast" : ""} ${a11y.links ? "a11y-highlight-links" : ""}`;
 
   return (
     <BrowserRouter>
@@ -94,45 +103,83 @@ function AppRoutes() {
         style={{ fontFamily: FONT, background: C.white, color: C.ink }}
       >
         <Routes>
-          {/* Public & Private Routes combined under PublicLayout */}
           <Route element={<PublicLayout a11y={a11y} setA11y={setA11y} />}>
+            {/* Public Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
+            <Route path="/services" element={<ServicesAvailable />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            
-            <Route element={<PrivateRoute />}>
-              <Route path="/dashboard" element={<InvestorDashboard />} />
-              <Route path="/business" element={<MyBusiness />} />
-              <Route path="/drive" element={<DocumentDrive />} />
-              <Route path="/services" element={<ServicesAvailable />} />
-              <Route path="/apply" element={<ApplyService />} />
-              <Route path="/track" element={<ServicesApplied />} />
-              <Route path="/calc" element={<IncentiveCalculator />} />
-              <Route path="/grievance" element={<Grievances />} />
-              <Route path="/factory" element={<FactoryUnits />} />
-              <Route path="/wizard" element={<InvestorWizard />} />
-              <Route path="/payments" element={<PaymentsHistory />} />
-              <Route path="/queries" element={<DepartmentQueries />} />
-              <Route path="/consultations" element={<PublicConsultations />} />
-              <Route path="/audit" element={<AuditLogs />} />
-              <Route path="/feedback" element={<Feedback />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
+          </Route>
+
+          <Route element={<AuthenticatedLayout a11y={a11y} setA11y={setA11y} />}>
+            {/* Investor Routes */}
+            <Route path="/app" element={
+              <RoleGuard allowedRoles={[ROLES.INVESTOR]}>
+                <Outlet />
+              </RoleGuard>
+            }>
+              <Route path="dashboard" element={<InvestorDashboard />} />
+              <Route path="business" element={<MyBusiness />} />
+              <Route path="drive" element={<DocumentDrive />} />
+              <Route path="services" element={<ServicesAvailable />} />
+              <Route path="apply" element={<ApplyService />} />
+              <Route path="applications" element={<ServicesApplied />} />
+              <Route path="calc" element={<IncentiveCalculator />} />
+              <Route path="grievance" element={<Grievances />} />
+              <Route path="factory" element={<FactoryUnits />} />
+              <Route path="wizard" element={<InvestorWizard />} />
+              <Route path="payments" element={<PaymentsHistory />} />
+              <Route path="queries" element={<DepartmentQueries />} />
+              <Route path="consultations" element={<PublicConsultations />} />
+              <Route path="audit" element={<AuditLogs />} />
+              <Route path="feedback" element={<Feedback />} />
+              <Route path="documents" element={<DocumentDrive />} />
+              <Route path="risk" element={<RiskAlerts />} />
+            </Route>
+
+            {/* Officer Routes */}
+            <Route path="/officer" element={
+              <RoleGuard allowedRoles={[ROLES.OFFICER]}>
+                <Outlet />
+              </RoleGuard>
+            }>
+              <Route path="dashboard" element={<OfficerDashboard />} />
+              <Route path="applications/*" element={<UnderConstruction title="Application Processing" />} />
+              <Route path="documents" element={<DocumentReview />} />
+              <Route path="fraud" element={<FraudRadar alerts={INITIAL_FRAUD_ALERTS} />} />
+              <Route path="queue" element={<OfficerQueue />} />
+              <Route path="duplicates" element={<DuplicateAlerts />} />
+              <Route path="grievances" element={<UnderConstruction title="Grievances" />} />
+            </Route>
+
+            {/* Policy Admin Routes */}
+            <Route path="/policy" element={
+              <RoleGuard allowedRoles={[ROLES.POLICY_ADMIN]}>
+                <Outlet />
+              </RoleGuard>
+            }>
+              <Route path="dashboard" element={<PolicyDashboard />} />
+              <Route path="services" element={<ManageServices />} />
+              <Route path="workflows" element={<ConfigureWorkflows />} />
+              <Route path="bottlenecks" element={<BottleneckAnalytics />} />
+              <Route path="districts" element={<DistrictAnalysis />} />
+              <Route path="sectors" element={<SectorAnalysis />} />
+              <Route path="departments" element={<DepartmentAnalysis />} />
+              <Route path="regulatory" element={<RegulatoryImpact />} />
             </Route>
           </Route>
 
-          {/* Officer Routes */}
-          <Route path="/officer" element={<PrivateRoute><OfficerLayout /></PrivateRoute>}>
-            <Route index element={<OfficerDashboard />} />
-            <Route path="fraud" element={<FraudRadar alerts={INITIAL_FRAUD_ALERTS} />} />
-          </Route>
+            <Route path="/digilocker-auth" element={<DigiLockerMockAuth />} />
+
         </Routes>
         <ChatBot />
       </div>
     </BrowserRouter>
   );
 }
-
 
 export function App() {
   return (

@@ -1,11 +1,13 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
+
 class IncentiveCalculateRequest(BaseModel):
     investment: float
     sector: str
     taluka_category: str
     employment: int = 0
+
 
 class GrievanceCreate(BaseModel):
     name: str
@@ -13,5 +15,7 @@ class GrievanceCreate(BaseModel):
     department: str
     issue: str
 
+
 class ChatRequest(BaseModel):
     message: str
+    application_id: Optional[str] = None

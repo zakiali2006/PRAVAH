@@ -1,0 +1,94 @@
+name: PRAVAH CI
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  backend-checks:
+    name: Backend Formatting, Linting & Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      # Required for pgvector compatibility in future integration tests, 
+      # though current unit tests run on SQLite.
+      postgres:
+        image: ankane/pgvector:latest
+        env:
+          POSTGRES_USER: pravah_user
+          POSTGRES_PASSWORD: pravah_password
+          POSTGRES_DB: pravah_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Fail if .env is committed
+      run: |
+        if [ -f "backend/.env" ]; then
+          echo "ERROR: .env file found in repository! Do not commit secrets."
+          exit 1
+        fi
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: "pip"
+
+    - name: Install dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Check code formatting with Black
+      working-directory: ./backend
+      run: black --check app
+
+    - name: Lint with Flake8
+      working-directory: ./backend
+      run: flake8 app
+
+    - name: Run Pytest
+      working-directory: ./backend
+      env:
+        ENV: test
+        # Pass dummy secret for JWT tests to pass
+        SECRET_KEY: "test_secret_key"
+      run: pytest app/tests/ -v
+
+  frontend-checks:
+    name: Frontend Lint & Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+        cache: "npm"
+        cache-dependency-path: ./frontend/package-lock.json
+
+    - name: Install dependencies (npm ci)
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: Lint
+      working-directory: ./frontend
+      run: npm run lint
+      continue-on-error: true # Warning only for now depending on strictness
+
+    - name: Build
+      working-directory: ./frontend
+      run: npm run build

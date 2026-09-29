@@ -10,9 +10,11 @@ export function useTranslation() {
 export function TranslationProvider({ children }) {
   const [lang, setLang] = useState('en');
 
+  // Fallback to English if translation is missing
   const t = T[lang] || T['en'];
 
   const toggleLanguage = () => {
+    // For legacy usages if any
     setLang((prev) => (prev === 'en' ? 'mr' : 'en'));
   };
 

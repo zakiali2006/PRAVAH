@@ -1,30 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Loader2, AlertTriangle, CheckCircle2, XCircle, Clock, ShieldAlert, Cpu } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { SectionHead } from "../../../components/common/SectionHead";
 import { Btn } from "../../../components/common/Btn";
+import { useApplications } from "../../../hooks/useApplications";
 
 export function OfficerDashboard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("workload");
-  const [queue, setQueue] = useState([]);
-
-  useEffect(() => {
-    const fetchQueue = async () => {
-      // Simulate network request
-      await new Promise(r => setTimeout(r, 800));
-      setQueue([
-        { id: "MTR/2026/001", service_name: "Fire NOC", applicant_name: "Sahyadri Precision", urgency: "critical", ai_score: 4.8, status: "pending" }
-      ]);
-    };
-    fetchQueue();
-  }, []);
-
+  const { applications: queue, loading: queueLoading } = useApplications(true);
+  
   const MOCK_FRAUD = [
     { id: "MTR/2026/112", applicant: "Unknown Shell Corp", issue: "Duplicate PAN Card detected across 3 distinct entities", confidence: 99.8 },
     { id: "MTR/2026/156", applicant: "Global Traders Inc", issue: "Geotag metadata on property deed does not match declared coordinates", confidence: 87.5 },
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-8 relative mb-20">
       
       <div className="flex items-start justify-between">
         <SectionHead
@@ -34,9 +26,38 @@ export function OfficerDashboard() {
         />
         <div className="flex gap-2 p-1 bg-gray-100 rounded-lg border border-gray-200">
           <button onClick={() => setActiveTab('workload')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-all ${activeTab === 'workload' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>Workload Queue</button>
+          <button onClick={() => setActiveTab('sla')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-all flex items-center gap-2 ${activeTab === 'sla' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+            <Clock size={16} /> SLA Dashboard
+          </button>
+          <button onClick={() => navigate('/officer/duplicates')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-all flex items-center gap-2 text-gray-500 hover:text-gray-700`}>
+            <Cpu size={16} /> Duplicates
+          </button>
           <button onClick={() => setActiveTab('fraud')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-all flex items-center gap-2 ${activeTab === 'fraud' ? 'bg-white shadow-sm text-red-600' : 'text-gray-500 hover:text-gray-700'}`}>
             <ShieldAlert size={16} /> Fraud Alerts
           </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs font-bold text-gray-500 mb-1 uppercase">Total Assigned</div>
+          <div className="text-2xl font-black text-gray-900">{queue.length}</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs font-bold text-gray-500 mb-1 uppercase">Pending</div>
+          <div className="text-2xl font-black text-blue-600">{queue.filter(a => a.status === 'submitted' || a.status === 'pending').length}</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs font-bold text-gray-500 mb-1 uppercase">In Review</div>
+          <div className="text-2xl font-black text-amber-500">{queue.filter(a => a.status === 'in_review' || a.status === 'processing').length}</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs font-bold text-gray-500 mb-1 uppercase">High Risk</div>
+          <div className="text-2xl font-black text-red-600">{queue.filter(a => a.ai_score > 65).length}</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs font-bold text-gray-500 mb-1 uppercase">Avg Risk Score</div>
+          <div className="text-2xl font-black text-gray-900">{queue.length > 0 ? Math.round(queue.reduce((acc, curr) => acc + (curr.ai_score || 0), 0) / queue.length) : 0}</div>
         </div>
       </div>
 
@@ -53,50 +74,58 @@ export function OfficerDashboard() {
           </div>
 
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-medium">
-                <tr>
-                  <th className="px-6 py-4">Application</th>
-                  <th className="px-6 py-4">AI Priority Score</th>
-                  <th className="px-6 py-4">SLA Status</th>
-                  <th className="px-6 py-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {queue.map((item, i) => (
-                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-gray-900">{item.id}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">{item.service_name} · {item.applicant_name}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-full bg-gray-200 rounded-full h-2 max-w-[100px]">
-                          <div className={`h-2 rounded-full ${item.ai_score > 3 ? 'bg-red-500' : item.ai_score > 2 ? 'bg-orange-500' : 'bg-blue-500'}`} style={{ width: `${(item.ai_score / 5) * 100}%` }}></div>
-                        </div>
-                        <span className="font-semibold text-gray-700">{item.ai_score}/5</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {item.urgency === 'critical' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
-                          <AlertTriangle size={14} /> Breach Risk
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                          <Clock size={14} /> On Track
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <Btn variant={i === 0 ? "navy" : "outline"} className={i===0 ? "bg-red-600 hover:bg-red-700 border-transparent text-white" : ""}>
-                        Process
-                      </Btn>
-                    </td>
+            {queueLoading ? (
+              <div className="p-8 text-center text-slate-500 flex justify-center items-center gap-2">
+                <Loader2 className="animate-spin" /> Loading queue...
+              </div>
+            ) : queue.length === 0 ? (
+              <div className="p-8 text-center text-slate-500">No applications pending for review.</div>
+            ) : (
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-medium">
+                  <tr>
+                    <th className="px-6 py-4">Application</th>
+                    <th className="px-6 py-4">AI Priority Score</th>
+                    <th className="px-6 py-4">SLA Status</th>
+                    <th className="px-6 py-4 text-right">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {queue.map((item, i) => (
+                    <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-gray-900">{item.id}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{item.service_name} · {item.applicant_name}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-full bg-gray-200 rounded-full h-2 max-w-[100px]">
+                            <div className={`h-2 rounded-full ${item.ai_score > 65 ? 'bg-red-500' : item.ai_score > 30 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, Math.max(0, item.ai_score || 0))}%` }}></div>
+                          </div>
+                          <span className="font-semibold text-gray-700">{item.ai_score ? item.ai_score.toFixed(1) : 'N/A'}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {item.ai_score > 65 ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                            <AlertTriangle size={14} /> Breach Risk
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                            <Clock size={14} /> On Track
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Btn variant={i === 0 ? "navy" : "outline"} onClick={() => navigate(`/officer/queue?processId=${encodeURIComponent(item.id)}`)}>
+                          Process
+                        </Btn>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
@@ -134,7 +163,6 @@ export function OfficerDashboard() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

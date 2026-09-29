@@ -1,24 +1,74 @@
-from fastapi import APIRouter
+import logging
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from app.core.database import get_db
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.models.schemas import ChatRequest
+from app.ai.rag_service import rag_service
+from app.core.responses import success_response, error_response, ErrorCode
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.post("/")
-def chat_assistant(request: ChatRequest):
+
+@router.post("", response_model=dict)
+@router.post("/", response_model=dict)
+def chat_assistant(
+    request: ChatRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """
-    Accepts the user's chatbot prompt and returns an AI-generated assistant reply.
-    Phase 18: AI Query Assistant
+    Kajal's Module: Authenticated RAG Query Assistant.
+
+    Retrieves semantically relevant chunks from the authenticated user's uploaded documents
+    using pgvector and generates grounded, factual answers using Google Gemini.
+
+    Endpoint: POST /api/chat
+    Requires: Bearer JWT Token in Authorization header.
     """
-    # Simple mock response for now
-    lower_msg = request.message.lower()
-    
-    if "eligible" in lower_msg or "subsidy" in lower_msg:
-        response = "To check your eligibility for subsidies, please use the Incentive Calculator under the Services tab."
-    elif "status" in lower_msg or "track" in lower_msg:
-        response = "You can track your application status by entering your Application ID in the 'Track Application' section on your dashboard."
-    else:
-        response = "I'm the MAITRI AI Assistant. How can I help you with your business approvals today?"
-        
-    return {
-        "reply": response
-    }
+    clean_message = request.message.strip()
+    if not clean_message:
+        return error_response(
+            ErrorCode.BAD_REQUEST,
+            "Message cannot be empty.",
+            status_code=400,
+        )
+
+    try:
+        rag_result = rag_service.answer_query(
+            db=db,
+            user_id=current_user.id,
+            question=clean_message,
+            application_id=request.application_id,
+        )
+
+        return success_response(
+            data=rag_result,
+            message="Query answered successfully",
+        )
+
+    except PermissionError as perm_err:
+        logger.warning("Unauthorized application access attempt in chat: %s", perm_err)
+        return error_response(
+            ErrorCode.FORBIDDEN,
+            str(perm_err),
+            status_code=403,
+        )
+    except ValueError as val_err:
+        logger.warning("Resource not found in chat: %s", val_err)
+        return error_response(
+            ErrorCode.RESOURCE_NOT_FOUND,
+            str(val_err),
+            status_code=404,
+        )
+    except Exception as exc:
+        logger.error("Error in chat_assistant endpoint: %s", exc)
+        return error_response(
+            ErrorCode.INTERNAL_ERROR,
+            "An error occurred while processing your request. Please try again.",
+            status_code=500,
+        )

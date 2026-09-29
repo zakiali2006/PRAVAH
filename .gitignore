@@ -1,5 +1,4 @@
 # Environments
-# .env
 .venv
 env/
 venv/
@@ -27,6 +26,20 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Database files
+*.db
+
 # Private Credentials (NEVER TRACK THESE)
 .env
+.env.*
+!.env.example
 firebase-credentials.json
+
+# App Data & Scratch Files
+uploads/
+scratch_*.py
+*.png
+*.jpg
+*.pdf
+
+phases.md
