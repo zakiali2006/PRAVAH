@@ -270,7 +270,12 @@ export function DocumentDrive() {
                   </div>
                 </div>
               ))}
-              {documents.length === 0 && (
+              {loading ? (
+                <div className="h-full flex flex-col items-center justify-center p-12 text-slate-400 min-h-[300px]">
+                  <Loader2 size={32} className="animate-spin text-blue-500 mb-4" />
+                  <p className="text-sm font-medium text-slate-500">Fetching documents from vault...</p>
+                </div>
+              ) : documents.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center p-12 text-slate-400 min-h-[300px]">
                   <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
                     <FolderOpen size={32} className="text-slate-300" />
@@ -278,7 +283,7 @@ export function DocumentDrive() {
                   <p className="text-sm font-medium text-slate-500">Your vault is empty.</p>
                   <p className="text-xs mt-1">Upload a document or link DigiLocker to get started.</p>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
