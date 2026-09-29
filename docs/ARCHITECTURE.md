@@ -151,8 +151,7 @@ SEED_REGISTRY = [
 
 | Email | Password | Role |
 |---|---|---|
-| `demo@gmail.com` | `demo123` | INVESTOR |
-| `officer@gov.in` | `admin123` | OFFICER |
-| `admin@pravah.gov.in` | `admin123` | SYSTEM_ADMIN |
-| `policy@pravah.gov.in` | `admin123` | POLICY_ADMIN |
+| `investor@demo.com` | `PravahTest!2026` | INVESTOR |
+| `officer@demo.com` | `PravahTest!2026` | OFFICER |
+| `policy@demo.com` | `PravahTest!2026` | POLICY_ADMIN |
 

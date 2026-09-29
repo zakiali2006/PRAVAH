@@ -1,6 +1,6 @@
 # Local Development Setup Guide
 
-A complete guide to cloning and running the PRAVAH / UdyogSetu project locally on your laptop.
+A complete guide to cloning and running the PRAVAH project locally on your laptop.
 
 ## Required Software
 1. **Git**: For version control.
@@ -79,5 +79,9 @@ npm run dev
 ## 5. Demo Credentials
 
 After seeding the database, you can log in with:
-- **Email**: `demo@gmail.com`
-- **Password**: `demo123`
+
+| Role | Email | Password |
+|---|---|---|
+| **Investor** | `investor@demo.com` | `PravahTest!2026` |
+| **Officer** | `officer@demo.com` | `PravahTest!2026` |
+| **Policy Admin** | `policy@demo.com` | `PravahTest!2026` |
