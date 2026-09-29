@@ -15,13 +15,17 @@ Base = declarative_base()
 # SQLAlchemy 2.0 Engine Configuration
 # ---------------------------------------------------------------------------
 # Using postgresql pooling arguments unless we are hitting sqlite (for fallback tests)
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
 connect_args = {}
-if settings.DATABASE_URL.startswith("sqlite"):
+if db_url.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
-    engine = create_engine(settings.DATABASE_URL, connect_args=connect_args)
+    engine = create_engine(db_url, connect_args=connect_args)
 else:
     engine = create_engine(
-        settings.DATABASE_URL,
+        db_url,
         pool_size=settings.DB_POOL_SIZE,
         max_overflow=settings.DB_MAX_OVERFLOW,
         pool_pre_ping=settings.DB_POOL_PRE_PING,
