@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 # --- Auto-run migrations on startup ---
 import os
+
 logger.info("Running database migrations...")
 os.system("alembic upgrade head")
 # --------------------------------------
