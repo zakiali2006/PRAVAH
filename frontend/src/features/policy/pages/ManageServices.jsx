@@ -3,6 +3,7 @@ import { SectionHead } from '../../../components/common/SectionHead';
 import { Btn } from '../../../components/common/Btn';
 import { C } from '../../../constants/theme';
 import { Plus, Edit2, Trash2, Search, CheckCircle2, XCircle } from 'lucide-react';
+import apiClient from '../../../api/client';
 
 export function ManageServices() {
   const [services, setServices] = useState([]);
@@ -12,9 +13,8 @@ export function ManageServices() {
 
   const fetchServices = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/services/`);
-      const data = await res.json();
-      setServices(data);
+      const res = await apiClient.get('/services/');
+      setServices(res.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -30,11 +30,7 @@ export function ManageServices() {
     e.preventDefault();
     try {
       const serviceId = `SRV-${Math.floor(100 + Math.random() * 900)}`;
-      await fetch(`http://127.0.0.1:8000/api/services/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newService, service_id: serviceId })
-      });
+      await apiClient.post('/services/', { ...newService, service_id: serviceId });
       setIsModalOpen(false);
       setNewService({ name: '', department: '', fee: 0, status: 'active', service_id: '' });
       fetchServices();
@@ -45,7 +41,7 @@ export function ManageServices() {
 
   const handleDelete = async (service_id) => {
     try {
-      await fetch(`http://127.0.0.1:8000/api/services/${service_id}`, { method: 'DELETE' });
+      await apiClient.delete(`/services/${service_id}`);
       fetchServices();
     } catch (err) {
       console.error(err);

@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronsUpDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
+import apiClient from "../../../api/client";
 
 const DUMMY_SERVICES = [
   "Form A - Electrical Installations - Other than Overhead Line",
@@ -33,11 +34,8 @@ export function ServicesAvailable() {
   
   const fetchServices = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/services/active`);
-      if (res.ok) {
-        const data = await res.json();
-        setServices(data);
-      }
+      const res = await apiClient.get('/services/active');
+      setServices(res.data);
     } catch (err) {
       console.error(err);
     }

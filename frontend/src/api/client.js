@@ -1,8 +1,10 @@
 import axios from 'axios';
 
+export const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
 // Ensure this points to your FastAPI backend port
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -36,7 +38,7 @@ export const uploadDocumentAPI = async (file, documentTypeId = 1, metadata = nul
     headers['Authorization'] = `Bearer ${token}`;
   }
   
-  const response = await fetch('http://localhost:8000/api/documents/upload', {
+  const response = await fetch(`${BASE_URL}/documents/upload`, {
     method: 'POST',
     headers,
     body: formData,
@@ -58,7 +60,7 @@ export const validateDocumentAPI = async (documentId) => {
     headers['Authorization'] = `Bearer ${token}`;
   }
   
-  const response = await fetch(`http://localhost:8000/api/documents/${documentId}/validate`, {
+  const response = await fetch(`${BASE_URL}/documents/${documentId}/validate`, {
     method: 'POST',
     headers,
   });
@@ -154,7 +156,7 @@ export const saveToVaultAPI = async (documentId) => {
     headers['Authorization'] = `Bearer ${token}`;
   }
   
-  const response = await fetch(`http://localhost:8000/api/documents/${documentId}/save_to_vault`, {
+  const response = await fetch(`${BASE_URL}/documents/${documentId}/save_to_vault`, {
     method: 'POST',
     headers,
   });
