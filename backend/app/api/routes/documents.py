@@ -139,10 +139,11 @@ def list_documents(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    docs = db.query(Document).filter(
-        Document.uploader_id == current_user.id,
-        Document.status != "DELETED"
-    ).all()
+    docs = (
+        db.query(Document)
+        .filter(Document.uploader_id == current_user.id, Document.status != "DELETED")
+        .all()
+    )
     data = [DocumentOut.model_validate(d).model_dump() for d in docs]
     return success_response(data, "Documents retrieved")
 
@@ -182,11 +183,12 @@ def delete_document(
 
     # 1. Delete associated RAG chunks to remove AI context
     from app.models.document_chunk import DocumentChunk
+
     db.query(DocumentChunk).filter(DocumentChunk.document_id == document_id).delete()
-    
+
     # 2. Soft-delete the document so applications can still reference it
     doc.status = "DELETED"
-    
+
     db.commit()
     return success_response(None, "Document deleted successfully")
 
@@ -285,7 +287,9 @@ def validate_document(
             .first()
         )
 
-        structured_data = extract_structured_data(raw_text, doc_type_name, business_profile)
+        structured_data = extract_structured_data(
+            raw_text, doc_type_name, business_profile
+        )
 
         # Phase 6: Automated Verification against real authenticated BusinessProfile
 
@@ -384,6 +388,7 @@ def get_validation_result(
     }
     return success_response(data, "Validation status retrieved")
 
+
 @router.post("/{document_id}/save_to_vault", response_model=dict)
 def save_document_to_vault(
     document_id: int,
@@ -402,7 +407,7 @@ def save_document_to_vault(
 
     # 1. Update status to Vaulted (if we want, or leave as is)
     # We will just mark it securely stored and trigger vectorisation
-    
+
     # 2. Trigger Vectorization
     raw_text = None
     if isinstance(doc.extracted_data, dict):
@@ -410,6 +415,9 @@ def save_document_to_vault(
 
     if raw_text:
         from app.engines.vectorize_engine import process_document_embeddings
+
         background_tasks.add_task(process_document_embeddings, db, doc.id, raw_text)
 
-    return success_response({"document_id": doc.id}, "Document saved to vault and vectorized successfully")
+    return success_response(
+        {"document_id": doc.id}, "Document saved to vault and vectorized successfully"
+    )

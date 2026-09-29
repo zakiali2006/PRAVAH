@@ -107,7 +107,9 @@ class RAGService:
             current_len = 0
 
             for chunk in retrieved_chunks:
-                chunk_header = f"[Document: {chunk.filename}, Chunk: {chunk.chunk_index}]"
+                chunk_header = (
+                    f"[Document: {chunk.filename}, Chunk: {chunk.chunk_index}]"
+                )
                 chunk_entry = f"{chunk_header}\n{chunk.content}\n"
                 if current_len + len(chunk_entry) > MAX_CONTEXT_CHARS and used_chunks:
                     break
@@ -177,7 +179,7 @@ class RAGService:
 
         except Exception as exc:
             logger.error("Gemini content generation failed: %s", exc)
-            
+
             # MOCK FALLBACK FOR DEMO: If Gemini is down, return a realistic RAG answer.
             fallback_reply = (
                 "Based on the PRAVAH context and your verified Business Profile, your document verification "
@@ -192,7 +194,7 @@ class RAGService:
                     "The system's Smart Triage assigned you a low risk score because the extracted PAN "
                     "and business details matched the Central Document Vault perfectly. You are on track for approval!"
                 )
-                
+
             return {
                 "reply": fallback_reply,
                 "sources": [],
