@@ -130,5 +130,5 @@ def delete_application(
     ).delete()
 
     # Delete the application
-    application_repo.remove(db, id=application_id)
+    application_repo.delete(db, id=application_id)
     return {"message": "Application deleted successfully"}
